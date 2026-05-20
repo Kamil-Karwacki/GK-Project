@@ -509,6 +509,9 @@ void PhysicsSystem::generateContacts(
             if (!colB)
                 continue;
 
+            if (!rbA && !rbB && !colA->m_isTrigger && !colB->m_isTrigger)
+                continue;
+
             bool aHitsB = (colA->m_mask & colB->m_layer) != 0;
             bool bHitsA = (colB->m_mask & colA->m_layer) != 0;
             if (!aHitsB || !bHitsA)

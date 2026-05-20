@@ -153,7 +153,7 @@ void BaseScene::init()
         sphere.AddComponent<MeshRenderer>(ballModel, defaultShader);
         sphere.GetComponent<Transform>()->setScale(glm::vec3(2.5f));
         sphere.GetComponent<Transform>()->setPosition(
-            glm::vec3(0.0f, 15.0f, 0.0f));
+            glm::vec3(static_cast<float>(i) / 100, 5.0f, 0.0f));
         SphereCollider &ballCol =
             sphere.AddComponentAs<Collider, SphereCollider>(2.0f);
         ballCol.m_restitution = 0.6f;
