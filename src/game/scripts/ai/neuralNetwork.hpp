@@ -1,5 +1,5 @@
 #pragma once
-#include "Matrix.hpp"
+#include "math.hpp"
 #include <cstdint>
 
 class NeuralNetwork

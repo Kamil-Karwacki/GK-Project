@@ -24,5 +24,5 @@ void PlayerGrounded::onTriggerEnter(Collider *other)
     if (!footballer)
         return;
 
-    footballer->m_groundTimer = 0.1f;
+    footballer->m_groundTimer = 0.2f;
 }

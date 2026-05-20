@@ -42,8 +42,9 @@ void BaseScene::init()
 
     player.AddComponent<PlayerController>();
     player.AddComponent<MeshRenderer>(playerModel, defaultShader);
-    player.AddComponent<Rigidbody>(10.0f, 0.1f, 0.5f, 0.9f, 0.9f);
+    player.AddComponent<Rigidbody>(10.0f, 0.1f, 0.5f, 0.99f, 0.99f);
     auto &playerCol = player.AddComponentAs<Collider, SphereCollider>(1.5f);
+    playerCol.m_restitution = 0.0f;
     playerCol.m_layer = CAT_PLAYER;
     playerCol.m_mask = CAT_BALL | CAT_ENEMY | CAT_GROUND;
     player.GetComponent<Rigidbody>()->m_invInertiaTensor =
@@ -67,8 +68,9 @@ void BaseScene::init()
         playerGrounded.AddComponentAs<Collider, SphereCollider>(
             0.5f, glm::mat4(1.0f), true);
     groundCol.m_layer = CAT_PLAYER;
-    groundCol.m_mask = CAT_GROUND | CAT_BALL | CAT_ENEMY;
-    playerGrounded.AddComponent<PlayerGrounded>(&player, glm::vec3(0, -1, 0));
+    groundCol.m_mask = CAT_GROUND | CAT_ENEMY;
+    playerGrounded.AddComponent<PlayerGrounded>(&player,
+                                                glm::vec3(0, -1.1f, 0));
 
     Entity &cameraPlayer = createEntity();
     cameraPlayer.AddComponent<Transform>();
@@ -83,9 +85,10 @@ void BaseScene::init()
 
         player.AddComponent<EnemyController>();
         player.AddComponent<MeshRenderer>(playerModel, defaultShader);
-        player.AddComponent<Rigidbody>(10.0f, 0.1f, 0.5f, 0.9f, 0.9f);
+        player.AddComponent<Rigidbody>(10.0f, 0.1f, 0.5f, 0.99f, 0.99f);
         SphereCollider &playerCol =
             player.AddComponentAs<Collider, SphereCollider>(1.5f);
+        playerCol.m_restitution = 0.0f;
         playerCol.m_layer = CAT_PLAYER;
         playerCol.m_mask = CAT_BALL | CAT_ENEMY | CAT_GROUND;
         player.GetComponent<Rigidbody>()->m_invInertiaTensor =
@@ -111,16 +114,17 @@ void BaseScene::init()
         groundCol.m_layer = CAT_PLAYER;
         groundCol.m_mask = CAT_GROUND | CAT_BALL | CAT_ENEMY;
         playerGrounded.AddComponent<PlayerGrounded>(&player,
-                                                    glm::vec3(0, -1, 0));
+                                                    glm::vec3(0, -1.1f, 0));
 
         Entity &enemy = createEntity();
         enemy.AddComponent<Transform>(glm::vec3(10, 10, 10), glm::vec3(0),
                                       glm::vec3(1.5f));
         enemy.AddComponent<EnemyController>();
         enemy.AddComponent<MeshRenderer>(playerModel, defaultShader);
-        enemy.AddComponent<Rigidbody>(10.0f, 0.1f, 0.5f, 0.9f, 0.9f);
+        enemy.AddComponent<Rigidbody>(10.0f, 0.1f, 0.5f, 0.99f, 0.99f);
         SphereCollider &enemyCol =
             enemy.AddComponentAs<Collider, SphereCollider>(1.5f);
+        enemyCol.m_restitution = 0.0f;
         enemyCol.m_layer = CAT_ENEMY;
         enemyCol.m_mask = CAT_BALL | CAT_PLAYER | CAT_GROUND;
         enemy.GetComponent<Rigidbody>()->m_invInertiaTensor =
@@ -146,7 +150,8 @@ void BaseScene::init()
                 0.5f, glm::mat4(1.0f), true);
         enemyGroundCol.m_layer = CAT_ENEMY;
         enemyGroundCol.m_mask = CAT_GROUND | CAT_BALL | CAT_PLAYER;
-        enemyGrounded.AddComponent<PlayerGrounded>(&enemy, glm::vec3(0, -1, 0));
+        enemyGrounded.AddComponent<PlayerGrounded>(&enemy,
+                                                   glm::vec3(0, -1.1f, 0));
 
         Entity &sphere = createEntity();
         sphere.AddComponent<Transform>();
@@ -161,7 +166,7 @@ void BaseScene::init()
         ballCol.m_layer = CAT_BALL;
         ballCol.m_mask = CAT_BALL | CAT_PLAYER | CAT_ENEMY | CAT_GROUND;
 
-        sphere.AddComponent<Rigidbody>(0.5f, 0.3f, 30.0f, 0.988f, 0.988f);
+        sphere.AddComponent<Rigidbody>(0.5f, 0.3f, 30.0f, 0.8f, 0.8f);
         Rigidbody *sphereRb = sphere.GetComponent<Rigidbody>();
         sphereRb->m_invInertiaTensor =
             Rigidbody::createSphereInverseInertiaTensor(10.0f, 2.0f);
@@ -191,7 +196,7 @@ void BaseScene::update(float deltaTime) { Scene::update(deltaTime); }
 
 void BaseScene::fixedUpdate(float deltaTime)
 {
-    static constexpr float gravity = 250.0f;
+    static constexpr float gravity = 2500.0f;
     for (auto &entity : m_entities)
     {
         Rigidbody *rb = entity->GetComponent<Rigidbody>();
