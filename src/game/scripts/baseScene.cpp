@@ -75,7 +75,7 @@ void BaseScene::init()
     m_mainCamera = &cameraPlayer.AddComponent<Camera>();
     cameraPlayer.AddComponent<CameraController>(&player);
 
-    for (int i = 1; i <= 20; i++)
+    for (int i = 1; i <= 100; i++)
     {
         Entity &player = createEntity();
         player.AddComponent<Transform>(glm::vec3(0, 10, 0), glm::vec3(0),
@@ -175,7 +175,6 @@ void BaseScene::init()
         enemyBallCol.m_arenaId = i;
         enemyGroundCol.m_arenaId = i;
         ballCol.m_arenaId = i;
-        std::cout << ballCol.m_arenaId << "\n";
 #endif
     }
 

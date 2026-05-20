@@ -467,10 +467,12 @@ void PhysicsSystem::setBodyData(Contact &contact, const Collider &colA,
 void PhysicsSystem::generateContacts(
     std::vector<std::unique_ptr<Entity>> &entities)
 {
-    m_contacts.reserve(entities.size() * entities.size() / 2);
     m_contacts.clear();
     if (entities.size() < 2)
         return;
+
+    std::vector<PhysicsNode> physicsNodes;
+    physicsNodes.reserve(entities.size());
 
     for (auto &entity : entities)
     {
@@ -479,33 +481,37 @@ void PhysicsSystem::generateContacts(
             continue;
 
         Collider *collider = entity->GetComponent<Collider>();
-        if (!collider || (collider->m_type != ColliderType::Sphere &&
-                          collider->m_type != ColliderType::Box))
-            continue;
 
-        TransformableCollider *transformable =
-            static_cast<TransformableCollider *>(collider);
+        if (collider)
+        {
+            Rigidbody *rb = entity->GetComponent<Rigidbody>();
+            physicsNodes.push_back({collider, rb});
 
-        transformable->m_worldTransform =
-            transform->getModelMatrix() * transformable->m_offset;
+            if (collider->m_type != ColliderType::Sphere &&
+                collider->m_type != ColliderType::Box)
+                continue;
+
+            TransformableCollider *transformable =
+                static_cast<TransformableCollider *>(collider);
+
+            transformable->m_worldTransform =
+                transform->getModelMatrix() * transformable->m_offset;
+        }
     }
 
-    for (size_t i = 0; i < entities.size(); ++i)
+    for (size_t i = 0; i < physicsNodes.size(); ++i)
     {
-        Entity *entityA = entities[i].get();
-        Rigidbody *rbA = entityA->GetComponent<Rigidbody>();
-
-        Collider *colA = entityA->GetComponent<Collider>();
+        Rigidbody *rbA = physicsNodes[i].rb;
+        Collider *colA = physicsNodes[i].col;
 
         if (!colA)
             continue;
 
-        for (size_t j = i + 1; j < entities.size(); ++j)
+        for (size_t j = i + 1; j < physicsNodes.size(); ++j)
         {
-            Entity *entityB = entities[j].get();
-            Rigidbody *rbB = entityB->GetComponent<Rigidbody>();
+            Rigidbody *rbB = physicsNodes[j].rb;
+            Collider *colB = physicsNodes[j].col;
 
-            Collider *colB = entityB->GetComponent<Collider>();
             if (!colB)
                 continue;
 

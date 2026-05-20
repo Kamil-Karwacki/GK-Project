@@ -46,6 +46,13 @@ class PhysicsSystem
     float m_velocityEpsilon = 0.01f;
     unsigned int m_positionIterations = 1;
     unsigned int m_velocityIterations = 1;
+
+    struct PhysicsNode
+    {
+        Collider *col;
+        Rigidbody *rb;
+    };
+
     /// @brief Casts box onto an axis.
     /// @param box box
     /// @param axis axis
