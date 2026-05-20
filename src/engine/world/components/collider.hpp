@@ -8,7 +8,8 @@ enum class ColliderType
 {
     Sphere,
     Box,
-    Halfspace
+    Halfspace,
+    Plane
 };
 
 enum CollisionLayer
@@ -19,6 +20,7 @@ enum CollisionLayer
     CAT_BALL = 1 << 3
 };
 
+#define AI_TRAINING
 struct Collider : public Component
 {
   public:
@@ -36,6 +38,10 @@ struct Collider : public Component
     bool m_isTrigger = false;
     uint64_t m_layer = UINT64_MAX;
     uint64_t m_mask = UINT64_MAX;
+
+#ifdef AI_TRAINING
+    int m_arenaId = -1;
+#endif
 };
 
 struct TransformableCollider : public Collider

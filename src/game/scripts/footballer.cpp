@@ -1,9 +1,6 @@
 #include "footballer.hpp"
 
-#include "core/application.hpp"
-#include "core/debug.hpp"
 #include "glm/geometric.hpp"
-#include "world/components/collider.hpp"
 #include "world/components/rigidbody.hpp"
 #include "world/components/transform.hpp"
 #include "world/entity.hpp"
@@ -12,13 +9,6 @@ void Footballer::onUpdate(float deltaTime)
 {
     kickLoop();
     move(deltaTime);
-}
-
-void Footballer::onTriggerEnter(Collider *other) { detectBall(other); }
-
-void Footballer::detectBall(Collider *other)
-{
-    m_ball = other->m_entity->GetComponent<Ball>();
 }
 
 void Footballer::kickBall() { m_shouldKick = true; }
@@ -38,17 +28,19 @@ void Footballer::kickLoop()
         return;
 
     Transform *transform = m_entity->GetComponent<Transform>();
-    Debug::addLine(transform->getPosition(),
-                   transform->getPosition() + glm::vec3(0, 4, 0));
-
-    Application &app = Application::Get();
-    InputManager manager = app.GetInput();
 
     glm::vec3 front = transform->getFront();
     glm::vec3 kickDir = -front;
     front.y *= -1.2f;
     float distToBall =
         glm::distance(transform->getPosition(), ballTrans->getPosition());
+
+    static constexpr float maxKickDistance = 6.0f;
+    if (distToBall > maxKickDistance)
+    {
+        m_ball = nullptr;
+        return;
+    }
     float kickModifier = 8.0f / pow(distToBall, 1.5f);
     ballRb->m_forceAcc += m_kickStrength * kickDir * kickModifier;
     m_ball = nullptr;

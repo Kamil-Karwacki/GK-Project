@@ -9,9 +9,6 @@ class Footballer : public Behaviour
   public:
     void onUpdate(float deltaTime) override;
 
-    void onTriggerEnter(Collider *other) override;
-
-    void detectBall(Collider *other);
     void kickBall();
     void move(float deltaTime);
 
@@ -19,11 +16,11 @@ class Footballer : public Behaviour
     glm::vec2 m_rotation = glm::vec2(0.0f);
     bool m_jump = false;
     float m_groundTimer = 0.1f;
+    Ball *m_ball = nullptr;
 
   private:
     void kickLoop();
     bool m_shouldKick = false;
-    Ball *m_ball = nullptr;
     float m_kickStrength = 170.0f;
     float m_speed = 250.0f;
     float m_jumpHeight = 110.0f;
