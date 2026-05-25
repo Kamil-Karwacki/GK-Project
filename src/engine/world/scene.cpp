@@ -1,14 +1,9 @@
 #include "scene.hpp"
 
-#include "graphics/renderSystem.hpp"
 #include "physics/physicsSystem.hpp"
-#include "world/components/transform.hpp"
+#include "world/entity.hpp"
 
-Scene::Scene(unsigned int whiteTextureId)
-{
-    m_renderSystem = std::make_unique<RenderSystem>(whiteTextureId);
-    m_physicsSystem = std::make_unique<PhysicsSystem>();
-}
+Scene::Scene() { m_physicsSystem = std::make_unique<PhysicsSystem>(); }
 
 Scene::~Scene() = default;
 
@@ -29,24 +24,6 @@ void Scene::fixedUpdate(float deltaTime)
     m_physicsSystem->resolveContacts(deltaTime);
 }
 
-void Scene::draw()
-{
-    m_renderSystem->render(m_entities, m_mainCamera->m_entity);
-}
-
-glm::mat4 Scene::getMainViewMatrix() const
-{
-    return m_mainCamera
-               ? glm::inverse(m_mainCamera->m_entity->GetComponent<Transform>()
-                                  ->getModelMatrix())
-               : glm::mat4(1.0f);
-}
-
-glm::mat4 Scene::getMainProjectionMatrix() const
-{
-    return m_mainCamera ? m_mainCamera->getProjection() : glm::mat4(1.0f);
-}
-
 Entity &Scene::createEntity()
 {
     std::unique_ptr<Entity> entity = std::make_unique<Entity>(this);
@@ -56,6 +33,8 @@ Entity &Scene::createEntity()
 
     return *rawPtr;
 }
+
+void Scene::draw() {}
 
 void Scene::addBehaviour(Behaviour *behaviour)
 {

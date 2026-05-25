@@ -148,7 +148,7 @@ Shader *Application::getShader(const std::string &name)
     return nullptr;
 }
 
-void Application::loadScene(std::unique_ptr<Scene> scene)
+void Application::loadScene(std::unique_ptr<BaseScene> scene)
 {
     m_activeScene = std::move(scene);
     if (m_activeScene)

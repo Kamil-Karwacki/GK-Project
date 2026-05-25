@@ -1,12 +1,10 @@
-#include "baseScene.hpp"
+#include "defaultScene.hpp"
 
-#include <cstdint>
 #include <memory>
 
 #include "ai/neuralAgent.hpp"
 #include "cameraController.hpp"
 #include "core/application.hpp"
-#include "core/debug.hpp"
 #include "footballer.hpp"
 #include "glm/ext/vector_float2.hpp"
 #include "glm/ext/vector_float3.hpp"
@@ -26,7 +24,7 @@
 #include "world/entity.hpp"
 #include "world/scene.hpp"
 
-void BaseScene::init()
+void DefaultScene::init()
 {
     generateTerrain();
 
@@ -84,7 +82,7 @@ void BaseScene::init()
     enemy.AddComponent<Transform>(glm::vec3(10, 10, 10), glm::vec3(0),
                                   glm::vec3(1.5f));
     EnemyController &enemyController = enemy.AddComponent<EnemyController>();
-    NeuralAgent &agent = enemy.AddComponent<NeuralAgent>(38, 64, 4);
+    NeuralAgent &agent = enemy.AddComponent<NeuralAgent>(38, 64, 6);
     agent.loadFromFile("best_brain.txt");
     enemy.AddComponent<MeshRenderer>(playerModel, defaultShader);
     enemy.AddComponent<Rigidbody>(10.0f, 0.1f, 0.5f, 0.99f, 0.99f);
@@ -146,9 +144,9 @@ void BaseScene::init()
     std::cout << "Scene initialized successfully\n";
 }
 
-void BaseScene::update(float deltaTime) { Scene::update(deltaTime); }
+void DefaultScene::update(float deltaTime) { Scene::update(deltaTime); }
 
-void BaseScene::fixedUpdate(float deltaTime)
+void DefaultScene::fixedUpdate(float deltaTime)
 {
     static constexpr float gravity = 2500.0f;
     for (auto &entity : m_entities)
@@ -163,9 +161,9 @@ void BaseScene::fixedUpdate(float deltaTime)
     Scene::fixedUpdate(deltaTime);
 }
 
-void BaseScene::draw() { Scene::draw(); }
+void DefaultScene::draw() { BaseScene::draw(); }
 
-void BaseScene::generateTerrain()
+void DefaultScene::generateTerrain()
 {
     Application &app = Application::Get();
     Shader *defaultShader = app.getShader("default");
@@ -234,9 +232,9 @@ void BaseScene::generateTerrain()
     }
 }
 
-void BaseScene::generatePitch(glm::vec2 pitchSize, glm::vec2 groundAdd,
-                              float wallHeight, float bannerLength,
-                              Shader *defaultShader)
+void DefaultScene::generatePitch(glm::vec2 pitchSize, glm::vec2 groundAdd,
+                                 float wallHeight, float bannerLength,
+                                 Shader *defaultShader)
 {
 
     Entity &ground = createEntity();
@@ -353,8 +351,8 @@ void BaseScene::generatePitch(glm::vec2 pitchSize, glm::vec2 groundAdd,
     }
 }
 
-void BaseScene::generateGates(glm::vec2 pitchSize, glm::vec3 gateSize,
-                              float gateThickness, Shader *defaultShader)
+void DefaultScene::generateGates(glm::vec2 pitchSize, glm::vec3 gateSize,
+                                 float gateThickness, Shader *defaultShader)
 {
     for (int j = 1; j > -2; j -= 2)
     {

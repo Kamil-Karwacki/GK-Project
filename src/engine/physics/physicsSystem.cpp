@@ -8,8 +8,6 @@
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/norm.hpp>
 
-#include "core/debug.hpp"
-
 bool PhysicsSystem::sphereAndSphere(SphereCollider &one, SphereCollider &two,
                                     Rigidbody *rbA, Rigidbody *rbB)
 {

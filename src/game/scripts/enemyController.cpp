@@ -225,4 +225,23 @@ void EnemyController::onUpdate(float deltaTime)
             footballer->kickBall();
         }
     }
+
+    float turnYaw = (outputs(4, 0) * 2.0f) - 1.0f;
+    if (std::abs(turnYaw) < 0.2f)
+        turnYaw = 0.0f;
+
+    float turnPitch = (outputs(5, 0) * 2.0f) - 1.0f;
+    if (std::abs(turnPitch) < 0.2f)
+        turnPitch = 0.0f;
+
+    float turnSpeed = 2.5f;
+    m_yaw += turnYaw * turnSpeed * deltaTime;
+    m_pitch += turnPitch * turnSpeed * deltaTime;
+
+    if (m_pitch > 0.45f)
+        m_pitch = 0.45f;
+    if (m_pitch < -0.45f)
+        m_pitch = -0.45f;
+
+    footballer->m_rotation = glm::vec2(m_pitch, m_yaw);
 }

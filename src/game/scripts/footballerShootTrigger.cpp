@@ -1,5 +1,4 @@
 #include "footballerShootTrigger.hpp"
-#include "core/debug.hpp"
 #include "scripts/footballer.hpp"
 #include "world/components/transform.hpp"
 #include "world/entity.hpp"

@@ -1,34 +1,27 @@
 
-#include "trainerScene.hpp"
+#include "headlessTrainerScene.hpp"
 
 #include <cstdint>
 #include <memory>
 
-#include "core/application.hpp"
 #include "glm/ext/matrix_transform.hpp"
 #include "glm/ext/vector_float2.hpp"
 #include "glm/ext/vector_float3.hpp"
 #include "glm/trigonometric.hpp"
-#include "graphics/model.hpp"
-#include "graphics/renderSystem.hpp"
 #include "scripts/ai/neuralAgent.hpp"
 #include "scripts/ball.hpp"
 #include "scripts/enemyController.hpp"
 #include "scripts/footballer.hpp"
 #include "scripts/footballerShootTrigger.hpp"
-#include "scripts/freeCameraController.hpp"
 #include "scripts/gateTrigger.hpp"
 #include "scripts/playerGrounded.hpp"
-#include "world/baseScene.hpp"
 #include "world/components/collider.hpp"
-#include "world/components/light.hpp"
-#include "world/components/meshRenderer.hpp"
 #include "world/components/rigidbody.hpp"
 #include "world/components/transform.hpp"
 #include "world/entity.hpp"
 #include "world/scene.hpp"
 
-void TrainerScene::init()
+void HeadlessTrainerScene::init()
 {
     for (int i = 0; i < 150; i++)
     {
@@ -36,25 +29,11 @@ void TrainerScene::init()
         generateArena(arena);
         m_arenas.push_back(std::move(arena));
     }
-    Entity &sun = createEntity();
-    sun.AddComponent<Transform>(glm::vec3(0, 50, 0),
-                                glm::vec3(glm::radians(290.0f), 0, 0));
-    sun.AddComponent<DirectionalLight>(glm::vec3(1.0f, 1.0f, 1.0f), 0.3f, 0.6f,
-                                       0.4f);
 
-    Entity &cameraPlayer = createEntity();
-    Transform &cameraTrans = cameraPlayer.AddComponent<Transform>();
-    m_mainCamera = &cameraPlayer.AddComponent<Camera>();
-    cameraTrans.setPosition({150, 450, 10});
-    cameraTrans.setRotation(glm::vec3(glm::radians(-90.0f), 0, 0));
-    cameraPlayer.AddComponent<FreeCameraController>();
-    std::cout << "Trainer scene initialized successfully\n";
+    std::cout << "Headless trainer scene initialized successfully\n";
 }
-void TrainerScene::generateArena(MatchArena &arena)
+void HeadlessTrainerScene::generateArena(MatchArena &arena)
 {
-    Application &app = Application::Get();
-    Shader *defaultShader = app.getShader("default");
-
     glm::vec2 pitchSize = glm::vec2(115, 74);
     pitchSize *= 1.4f;
     float wallHeight = 4.0f;
@@ -62,19 +41,11 @@ void TrainerScene::generateArena(MatchArena &arena)
 
     glm::vec2 tribuneOffset = glm::vec2(0, 10);
     glm::vec2 groundAdd = glm::vec2(tribuneOffset.y * 2);
-    generatePitch(arena, pitchSize, groundAdd, wallHeight, bannerLength,
-                  defaultShader);
+    generatePitch(arena, pitchSize, groundAdd, wallHeight, bannerLength);
     glm::vec3 gateSize = glm::vec3(30.0f, 11.0f, 11.0f);
     float gateThickness = 0.7f;
 
-    generateGates(arena, pitchSize, gateSize, gateThickness, defaultShader);
-
-    std::shared_ptr<Model> playerModel =
-        std::make_shared<Model>("assets/models/sphere.obj");
-    std::shared_ptr<Model> ballModel =
-        std::make_shared<Model>("assets/models/ball.obj");
-    std::shared_ptr<Model> redBallModel =
-        std::make_shared<Model>("assets/models/redBall.obj");
+    generateGates(arena, pitchSize, gateSize, gateThickness);
 
     // player A
     Entity &player = arena.createEntity(this);
@@ -82,7 +53,6 @@ void TrainerScene::generateArena(MatchArena &arena)
                                    glm::vec3(0), glm::vec3(1.5f));
 
     EnemyController &enemyA = player.AddComponent<EnemyController>();
-    player.AddComponent<MeshRenderer>(playerModel, defaultShader);
     player.AddComponent<Rigidbody>(10.0f, 0.1f, 0.5f, 0.99f, 0.99f);
     SphereCollider &playerCol =
         player.AddComponentAs<Collider, SphereCollider>(1.5f);
@@ -92,8 +62,7 @@ void TrainerScene::generateArena(MatchArena &arena)
     player.GetComponent<Rigidbody>()->m_invInertiaTensor =
         Rigidbody::createSphereInverseInertiaTensor(1.0f, 2.0f);
     player.AddComponent<Footballer>();
-    NeuralAgent &neuralA = player.AddComponent<NeuralAgent>(38, 64, 6);
-    neuralA.loadFromFile("best_brain.txt");
+    NeuralAgent &neuralA = player.AddComponent<NeuralAgent>(38, 64, 4);
 
     Entity &playerShootTrigger = arena.createEntity(this);
     playerShootTrigger.AddComponent<Transform>();
@@ -122,7 +91,6 @@ void TrainerScene::generateArena(MatchArena &arena)
                                   glm::vec3(0), glm::vec3(1.5f));
 
     EnemyController &enemyB = enemy.AddComponent<EnemyController>();
-    enemy.AddComponent<MeshRenderer>(redBallModel, defaultShader);
     enemy.AddComponent<Rigidbody>(10.0f, 0.1f, 0.5f, 0.99f, 0.99f);
     SphereCollider &enemyCol =
         enemy.AddComponentAs<Collider, SphereCollider>(1.5f);
@@ -132,8 +100,7 @@ void TrainerScene::generateArena(MatchArena &arena)
     enemy.GetComponent<Rigidbody>()->m_invInertiaTensor =
         Rigidbody::createSphereInverseInertiaTensor(1.0f, 2.0f);
     enemy.AddComponent<Footballer>();
-    NeuralAgent &neuralB = enemy.AddComponent<NeuralAgent>(38, 64, 6);
-    neuralB.loadFromFile("best_brain.txt");
+    NeuralAgent &neuralB = enemy.AddComponent<NeuralAgent>(38, 64, 4);
 
     Entity &enemyShootTrigger = arena.createEntity(this);
     enemyShootTrigger.AddComponent<Transform>();
@@ -141,8 +108,8 @@ void TrainerScene::generateArena(MatchArena &arena)
     offset = glm::mat4(1.0f);
     offset = glm::translate(offset, glm::vec3(0, 0, 3.6f));
     SphereCollider &enemyBallCol =
-        enemyShootTrigger.AddComponentAs<Collider, SphereCollider>(1.1f, offset,
-                                                                   true);
+        enemyShootTrigger.AddComponentAs<Collider, SphereCollider>(
+            1.1f, offset, true); // Poprawka nazwy
     enemyBallCol.m_layer = CAT_PLAYER;
     enemyBallCol.m_mask = CAT_BALL;
 
@@ -158,7 +125,6 @@ void TrainerScene::generateArena(MatchArena &arena)
     // ball
     Entity &sphere = arena.createEntity(this);
     sphere.AddComponent<Transform>();
-    sphere.AddComponent<MeshRenderer>(ballModel, defaultShader);
     sphere.GetComponent<Transform>()->setScale(glm::vec3(2.5f));
     sphere.GetComponent<Transform>()->setPosition(arena.m_arenaOffset +
                                                   glm::vec3(0.0f, 5.0f, 0.0f));
@@ -189,9 +155,9 @@ void TrainerScene::generateArena(MatchArena &arena)
     { arena.m_fitnessB += reward; };
 }
 
-void TrainerScene::update(float deltaTime) { Scene::update(deltaTime); }
+void HeadlessTrainerScene::update(float deltaTime) { Scene::update(deltaTime); }
 
-void TrainerScene::fixedUpdate(float deltaTime)
+void HeadlessTrainerScene::fixedUpdate(float deltaTime)
 {
     static constexpr float gravity = 42.0f;
 
@@ -276,28 +242,12 @@ void TrainerScene::fixedUpdate(float deltaTime)
     Scene::fixedUpdate(deltaTime);
 }
 
-void TrainerScene::draw()
-{
-    BaseScene::draw();
-
-    for (auto &arena : m_arenas)
-    {
-        m_renderSystem->render(arena.m_entities, m_mainCamera->m_entity);
-    }
-}
-
-void TrainerScene::generatePitch(MatchArena &arena, glm::vec2 pitchSize,
-                                 glm::vec2 groundAdd, float wallHeight,
-                                 float bannerLength, Shader *defaultShader)
+void HeadlessTrainerScene::generatePitch(MatchArena &arena, glm::vec2 pitchSize,
+                                         glm::vec2 groundAdd, float wallHeight,
+                                         float bannerLength)
 {
     Entity &ground = arena.createEntity(this);
     ground.AddComponent<Transform>(arena.m_arenaOffset);
-    ground.AddComponent<MeshRenderer>(
-        std::make_shared<Model>(
-            Mesh::createBox(glm::vec3(pitchSize.y + groundAdd.x, 0.5f,
-                                      pitchSize.x + groundAdd.y),
-                            glm::vec3(0.2f, 0.5f, 0.2f))),
-        defaultShader);
 
     Collider &groundCol = ground.AddComponentAs<Collider, HalfspaceCollider>(
         glm::vec3(0.0f, 1.0f, 0.0f), 0.0f);
@@ -305,8 +255,6 @@ void TrainerScene::generatePitch(MatchArena &arena, glm::vec2 pitchSize,
     groundCol.m_mask = CAT_PLAYER | CAT_ENEMY | CAT_BALL;
     groundCol.m_restitution = 0.4f;
 
-    std::shared_ptr<Model> bannerModelA =
-        std::make_shared<Model>("assets/models/baner1.obj");
     glm::vec2 bannerCount = glm::round(pitchSize / bannerLength);
     glm::vec2 bannerLengths = pitchSize / bannerCount;
     glm::vec2 bannerScale = bannerLengths / bannerLength;
@@ -323,9 +271,6 @@ void TrainerScene::generatePitch(MatchArena &arena, glm::vec2 pitchSize,
         transA.setScale(glm::vec3(bannerScale.y, 1.0f, 1.0f));
         transA.setRotation(
             glm::vec3(glm::radians(90.0f), glm::radians(180.0f), 0));
-        wallA.AddComponent<MeshRenderer>(
-            bannerModelA, defaultShader,
-            glm::vec3(0.0f, wallHeight / 2.0f, 0.0f));
 
         if (i == 0)
         {
@@ -348,9 +293,6 @@ void TrainerScene::generatePitch(MatchArena &arena, glm::vec2 pitchSize,
         transB.setScale(glm::vec3(bannerScale.y, 1.0f, 1.0f));
         transB.setRotation(
             glm::vec3(glm::radians(90.0f), glm::radians(180.0f), 0));
-        wallB.AddComponent<MeshRenderer>(
-            bannerModelA, defaultShader,
-            glm::vec3(0.0f, wallHeight / 2.0f, 0.0f));
         if (i == 0)
         {
             glm::vec3 normal(0.0f, 0.0f, 1.0f);
@@ -375,9 +317,6 @@ void TrainerScene::generatePitch(MatchArena &arena, glm::vec2 pitchSize,
         transA.setScale(glm::vec3(bannerScale.x, 1.0f, 1.0f));
         transA.setRotation(
             glm::vec3(glm::radians(90.0f), glm::radians(270.0f), 0));
-        wallA.AddComponent<MeshRenderer>(
-            bannerModelA, defaultShader,
-            glm::vec3(0.0f, wallHeight / 2.0f, 0.0f));
 
         if (i == 0)
         {
@@ -400,9 +339,6 @@ void TrainerScene::generatePitch(MatchArena &arena, glm::vec2 pitchSize,
         transB.setScale(glm::vec3(bannerScale.x, 1.0f, 1.0f));
         transB.setRotation(
             glm::vec3(glm::radians(90.0f), glm::radians(90.0f), 0));
-        wallB.AddComponent<MeshRenderer>(
-            bannerModelA, defaultShader,
-            glm::vec3(0.0f, wallHeight / 2.0f, 0.0f));
 
         if (i == 0)
         {
@@ -417,9 +353,9 @@ void TrainerScene::generatePitch(MatchArena &arena, glm::vec2 pitchSize,
     }
 }
 
-void TrainerScene::generateGates(MatchArena &arena, glm::vec2 pitchSize,
-                                 glm::vec3 gateSize, float gateThickness,
-                                 Shader *defaultShader)
+void HeadlessTrainerScene::generateGates(MatchArena &arena, glm::vec2 pitchSize,
+                                         glm::vec3 gateSize,
+                                         float gateThickness)
 {
     for (int j = 1; j > -2; j -= 2)
     {
@@ -432,11 +368,6 @@ void TrainerScene::generateGates(MatchArena &arena, glm::vec2 pitchSize,
                 glm::vec3(i * gateSize.x / 2.0f, gateSize.y / 2.0f,
                           j * pitchSize.x / 2.0f - gateSize.z * j));
 
-            bar.AddComponent<MeshRenderer>(
-                std::make_shared<Model>(Mesh::createBox(
-                    glm::vec3(gateThickness, gateSize.y, gateThickness),
-                    glm::vec3(0.8f, 0.8f, 0.8f))),
-                defaultShader);
             BoxCollider &boxCol = bar.AddComponentAs<Collider, BoxCollider>(
                 glm::vec3(gateThickness / 2.0f, gateSize.y / 2.0f,
                           gateSize.z / 2.0f));
@@ -493,12 +424,6 @@ void TrainerScene::generateGates(MatchArena &arena, glm::vec2 pitchSize,
             glm::vec3(0.0f, gateSize.y,
                       i * pitchSize.x / 2.0f - gateSize.z * i));
         topTrans.setRotation(glm::vec3(0.0f, 0.0f, glm::radians(90.0f)));
-        topBar.AddComponent<MeshRenderer>(
-            std::make_shared<Model>(Mesh::createBox(
-                glm::vec3(gateThickness, gateSize.x + gateThickness,
-                          gateThickness),
-                glm::vec3(0.8f, 0.8f, 0.8f))),
-            defaultShader);
         BoxCollider &boxCol =
             topBar.AddComponentAs<Collider, BoxCollider>(glm::vec3(
                 gateThickness / 2.0f, gateSize.x / 2.0f, gateSize.z / 2.0f));

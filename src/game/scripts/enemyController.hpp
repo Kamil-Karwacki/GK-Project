@@ -9,6 +9,8 @@ class EnemyController : public Behaviour
     Entity *m_ball;
     glm::vec3 m_ownGatePos;
     glm::vec3 m_enemyGatePos;
+    float m_yaw = 0.0f;
+    float m_pitch = 0.0f;
     std::function<void(float)> onKickReward;
 
     void onStart() override;

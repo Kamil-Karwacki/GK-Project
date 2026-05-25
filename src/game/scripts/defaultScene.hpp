@@ -1,12 +1,12 @@
 #pragma once
 #include "glm/ext/vector_float2.hpp"
 #include "graphics/shader.hpp"
-#include "world/scene.hpp"
+#include "world/baseScene.hpp"
 
-class BaseScene : public Scene
+class DefaultScene : public BaseScene
 {
   public:
-    using Scene::Scene;
+    using BaseScene::BaseScene;
     void init() override;
     void update(float deltaTime) override;
     void fixedUpdate(float deltaTime) override;

@@ -1,10 +1,12 @@
 #include "core/application.hpp"
-#include "game/scripts/baseScene.hpp"
+#include "game/scripts/defaultScene.hpp"
 
-int main() {
+int main()
+{
     Application app;
 
-    std::unique_ptr<Scene> baseScene = std::make_unique<BaseScene>(app.getWhiteTexture());
+    std::unique_ptr<DefaultScene> baseScene =
+        std::make_unique<DefaultScene>(app.getWhiteTexture());
 
     app.loadScene(std::move(baseScene));
 
