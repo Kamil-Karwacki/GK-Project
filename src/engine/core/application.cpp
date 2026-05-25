@@ -13,6 +13,10 @@
 #include "window.hpp"
 #include "world/entity.hpp"
 
+#include <imgui.h>
+#include <imgui_impl_glfw.h>
+#include <imgui_impl_opengl3.h>
+
 Application *Application::s_Instance = nullptr;
 
 Application::Application() : m_isRunning(true)
@@ -56,6 +60,18 @@ Application::Application() : m_isRunning(true)
     // fix for Denormal Floats
     _MM_SET_FLUSH_ZERO_MODE(_MM_FLUSH_ZERO_ON);
     _MM_SET_DENORMALS_ZERO_MODE(_MM_DENORMALS_ZERO_ON);
+
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO &io = ImGui::GetIO();
+    (void)io;
+
+    ImGui::StyleColorsDark();
+
+    ImGui_ImplGlfw_InitForOpenGL(m_window->getNativeWindow(), true);
+
+    const char *glsl_version = "#version 450";
+    ImGui_ImplOpenGL3_Init(glsl_version);
 }
 
 Application::~Application() { glfwTerminate(); }

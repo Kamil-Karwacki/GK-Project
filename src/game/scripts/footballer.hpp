@@ -18,10 +18,11 @@ class Footballer : public Behaviour
     float m_groundTimer = 0.1f;
     Ball *m_ball = nullptr;
 
+    float m_speed = 30.0f;
+    float m_jumpHeight = 1550.0f;
+    float m_kickStrength = 5000.0f;
+
   private:
     void kickLoop();
     bool m_shouldKick = false;
-    float m_kickStrength = 5000.0f;
-    float m_speed = 30.0f;
-    float m_jumpHeight = 1550.0f;
 };

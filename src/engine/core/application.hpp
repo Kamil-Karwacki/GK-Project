@@ -30,8 +30,10 @@ class Application
 
     void loadScene(std::unique_ptr<Scene> scene);
 
-  private:
     std::unique_ptr<Window> m_window;
+    std::unique_ptr<Scene> m_activeScene;
+
+  private:
     std::unique_ptr<InputManager> m_inputManager;
 
     double m_lastFrameTime = 0.0f;
@@ -41,6 +43,4 @@ class Application
 
     unsigned int whiteTexture;
     std::unordered_map<std::string, std::unique_ptr<Shader>> m_shaders;
-
-    std::unique_ptr<Scene> m_activeScene;
 };

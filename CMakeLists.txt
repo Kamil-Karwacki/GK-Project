@@ -50,18 +50,36 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(tinyobjloader)
 
-add_subdirectory(external/glad)
+FetchContent_Declare(
+    imgui
+    GIT_REPOSITORY https://github.com/ocornut/imgui.git
+    GIT_TAG        v1.92.8 
+)
+FetchContent_GetProperties(imgui)
+if(NOT imgui_POPULATED)
+    FetchContent_Populate(imgui)
+endif()
 
-add_executable(${PROJECT_NAME})
-
-add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-    "${CMAKE_SOURCE_DIR}/assets"
-    "$<TARGET_FILE_DIR:${PROJECT_NAME}>/assets"
-    COMMENT "Copying assets..."
+add_library(imgui_lib STATIC
+    ${imgui_SOURCE_DIR}/imgui.cpp
+    ${imgui_SOURCE_DIR}/imgui_demo.cpp
+    ${imgui_SOURCE_DIR}/imgui_draw.cpp
+    ${imgui_SOURCE_DIR}/imgui_tables.cpp
+    ${imgui_SOURCE_DIR}/imgui_widgets.cpp
+    ${imgui_SOURCE_DIR}/backends/imgui_impl_glfw.cpp
+    ${imgui_SOURCE_DIR}/backends/imgui_impl_opengl3.cpp
 )
 
-target_sources(${PROJECT_NAME} PRIVATE
+add_subdirectory(external/glad)
+
+target_include_directories(imgui_lib PUBLIC 
+    ${imgui_SOURCE_DIR}
+    ${imgui_SOURCE_DIR}/backends
+)
+
+target_link_libraries(imgui_lib PUBLIC glfw glad)
+
+add_library(HeadSoccerCore STATIC
     src/engine/core/application.cpp
     src/engine/core/debug.cpp
     src/engine/core/input.cpp
@@ -82,28 +100,62 @@ target_sources(${PROJECT_NAME} PRIVATE
     src/game/scripts/footballer.cpp
     src/game/scripts/ball.cpp
     src/game/scripts/playerGrounded.cpp
+    src/game/scripts/footballerShootTrigger.cpp
+    src/game/scripts/enemyController.cpp
+    src/game/scripts/gateTrigger.cpp
+    src/game/scripts/freeCameraController.cpp
+    src/game/scripts/ai/math.cpp
+    src/game/scripts/ai/neuralAgent.cpp
     src/third_party/stb_implementation.cpp
     src/third_party/tinyobjloader_implementation.cpp
-    src/main.cpp
 )
 
-target_compile_options(${PROJECT_NAME} PRIVATE ${COMPILER_WARNINGS})
+target_compile_options(HeadSoccerCore PRIVATE ${COMPILER_WARNINGS})
 
-target_include_directories(${PROJECT_NAME} PRIVATE
+target_include_directories(HeadSoccerCore PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/src/engine
     ${CMAKE_CURRENT_SOURCE_DIR}/src/game
     ${CMAKE_CURRENT_SOURCE_DIR}/src/third_party
     ${stb_SOURCE_DIR}
 )
 
-target_link_libraries(${PROJECT_NAME} PRIVATE
+target_link_libraries(HeadSoccerCore PUBLIC
     glfw
     glm::glm
     glad
     tinyobjloader
+    imgui_lib
 )
 
 if(UNIX AND NOT APPLE)
     find_package(OpenGL REQUIRED)
-    target_link_libraries(${PROJECT_NAME} PRIVATE ${OPENGL_LIBRARIES} dl pthread)
+    target_link_libraries(HeadSoccerCore PUBLIC ${OPENGL_LIBRARIES} dl pthread)
 endif()
+
+add_executable(HeadSoccerGame src/main.cpp)
+
+target_link_libraries(HeadSoccerGame PRIVATE HeadSoccerCore)
+
+add_custom_command(TARGET HeadSoccerGame POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+    "${CMAKE_SOURCE_DIR}/assets"
+    "$<TARGET_FILE_DIR:HeadSoccerGame>/assets"
+    COMMENT "Copying assets for Game..."
+)
+
+find_package(OpenMP REQUIRED COMPONENTS CXX)
+
+add_executable(AITrainer 
+    src/trainer/mainTrainer.cpp
+    src/trainer/trainerScene.cpp
+    src/trainer/geneticTrainer.cpp
+)
+
+target_link_libraries(AITrainer PRIVATE HeadSoccerCore OpenMP::OpenMP_CXX)
+
+add_custom_command(TARGET AITrainer POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+    "${CMAKE_SOURCE_DIR}/assets"
+    "$<TARGET_FILE_DIR:AITrainer>/assets"
+    COMMENT "Copying assets for AI Trainer..."
+)

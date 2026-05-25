@@ -18,5 +18,6 @@ class BaseScene : public Scene
     void generateGates(glm::vec2 pitchSize, glm::vec3 gateSize,
                        float gateThickness, Shader *defaultShader);
 
-  private:
+    glm::vec3 m_playerGatePos;
+    glm::vec3 m_enemyGatePos;
 };

@@ -1,7 +1,9 @@
 #include "baseScene.hpp"
 
+#include <cstdint>
 #include <memory>
 
+#include "ai/neuralAgent.hpp"
 #include "cameraController.hpp"
 #include "core/application.hpp"
 #include "core/debug.hpp"
@@ -11,6 +13,7 @@
 #include "glm/trigonometric.hpp"
 #include "graphics/model.hpp"
 #include "playerController.hpp"
+#include "scripts/ai/neuralAgent.hpp"
 #include "scripts/ball.hpp"
 #include "scripts/enemyController.hpp"
 #include "scripts/footballerShootTrigger.hpp"
@@ -77,111 +80,61 @@ void BaseScene::init()
     m_mainCamera = &cameraPlayer.AddComponent<Camera>();
     cameraPlayer.AddComponent<CameraController>(&player);
 
-    for (int i = 1; i <= 100; i++)
-    {
-        Entity &player = createEntity();
-        player.AddComponent<Transform>(glm::vec3(0, 10, 0), glm::vec3(0),
-                                       glm::vec3(1.5f));
+    Entity &enemy = createEntity();
+    enemy.AddComponent<Transform>(glm::vec3(10, 10, 10), glm::vec3(0),
+                                  glm::vec3(1.5f));
+    EnemyController &enemyController = enemy.AddComponent<EnemyController>();
+    NeuralAgent &agent = enemy.AddComponent<NeuralAgent>(38, 64, 4);
+    agent.loadFromFile("best_brain.txt");
+    enemy.AddComponent<MeshRenderer>(playerModel, defaultShader);
+    enemy.AddComponent<Rigidbody>(10.0f, 0.1f, 0.5f, 0.99f, 0.99f);
+    SphereCollider &enemyCol =
+        enemy.AddComponentAs<Collider, SphereCollider>(1.5f);
+    enemyCol.m_restitution = 0.0f;
+    enemyCol.m_layer = CAT_ENEMY;
+    enemyCol.m_mask = CAT_BALL | CAT_PLAYER | CAT_GROUND;
+    enemy.GetComponent<Rigidbody>()->m_invInertiaTensor =
+        Rigidbody::createSphereInverseInertiaTensor(1.0f, 2.0f);
+    enemy.AddComponent<Footballer>();
 
-        player.AddComponent<EnemyController>();
-        player.AddComponent<MeshRenderer>(playerModel, defaultShader);
-        player.AddComponent<Rigidbody>(10.0f, 0.1f, 0.5f, 0.99f, 0.99f);
-        SphereCollider &playerCol =
-            player.AddComponentAs<Collider, SphereCollider>(1.5f);
-        playerCol.m_restitution = 0.0f;
-        playerCol.m_layer = CAT_PLAYER;
-        playerCol.m_mask = CAT_BALL | CAT_ENEMY | CAT_GROUND;
-        player.GetComponent<Rigidbody>()->m_invInertiaTensor =
-            Rigidbody::createSphereInverseInertiaTensor(1.0f, 2.0f);
-        player.AddComponent<Footballer>();
+    Entity &enemyShootTrigger = createEntity();
+    enemyShootTrigger.AddComponent<Transform>();
+    enemyShootTrigger.AddComponent<FootballerShootTrigger>(&enemy);
+    offset = glm::mat4(1.0f);
+    offset = glm::translate(offset, glm::vec3(0, 0, 3.6f));
+    SphereCollider &enemyBallCol =
+        playerShootTrigger.AddComponentAs<Collider, SphereCollider>(
+            1.1f, offset, true);
 
-        Entity &playerShootTrigger = createEntity();
-        playerShootTrigger.AddComponent<Transform>();
-        playerShootTrigger.AddComponent<FootballerShootTrigger>(&player);
-        glm::mat4 offset = glm::mat4(1.0f);
-        offset = glm::translate(offset, glm::vec3(0, 0, 3.6f));
-        SphereCollider &playerBallCol =
-            playerShootTrigger.AddComponentAs<Collider, SphereCollider>(
-                1.1f, offset, true);
-        playerBallCol.m_layer = CAT_PLAYER;
-        playerBallCol.m_mask = CAT_BALL;
+    enemyBallCol.m_layer = CAT_PLAYER;
+    enemyBallCol.m_mask = CAT_BALL;
 
-        Entity &playerGrounded = createEntity();
-        playerGrounded.AddComponent<Transform>();
-        SphereCollider &groundCol =
-            playerGrounded.AddComponentAs<Collider, SphereCollider>(
-                0.5f, glm::mat4(1.0f), true);
-        groundCol.m_layer = CAT_PLAYER;
-        groundCol.m_mask = CAT_GROUND | CAT_BALL | CAT_ENEMY;
-        playerGrounded.AddComponent<PlayerGrounded>(&player,
-                                                    glm::vec3(0, -1.1f, 0));
+    Entity &enemyGrounded = createEntity();
+    enemyGrounded.AddComponent<Transform>();
+    SphereCollider &enemyGroundCol =
+        enemyGrounded.AddComponentAs<Collider, SphereCollider>(
+            0.5f, glm::mat4(1.0f), true);
+    enemyGroundCol.m_layer = CAT_ENEMY;
+    enemyGroundCol.m_mask = CAT_GROUND | CAT_BALL | CAT_PLAYER;
+    enemyGrounded.AddComponent<PlayerGrounded>(&enemy, glm::vec3(0, -1.1f, 0));
 
-        Entity &enemy = createEntity();
-        enemy.AddComponent<Transform>(glm::vec3(10, 10, 10), glm::vec3(0),
-                                      glm::vec3(1.5f));
-        enemy.AddComponent<EnemyController>();
-        enemy.AddComponent<MeshRenderer>(playerModel, defaultShader);
-        enemy.AddComponent<Rigidbody>(10.0f, 0.1f, 0.5f, 0.99f, 0.99f);
-        SphereCollider &enemyCol =
-            enemy.AddComponentAs<Collider, SphereCollider>(1.5f);
-        enemyCol.m_restitution = 0.0f;
-        enemyCol.m_layer = CAT_ENEMY;
-        enemyCol.m_mask = CAT_BALL | CAT_PLAYER | CAT_GROUND;
-        enemy.GetComponent<Rigidbody>()->m_invInertiaTensor =
-            Rigidbody::createSphereInverseInertiaTensor(1.0f, 2.0f);
-        enemy.AddComponent<Footballer>();
+    Entity &sphere = createEntity();
+    sphere.AddComponent<Transform>();
+    sphere.AddComponent<MeshRenderer>(ballModel, defaultShader);
+    sphere.GetComponent<Transform>()->setScale(glm::vec3(2.5f));
+    sphere.GetComponent<Transform>()->setPosition(glm::vec3(0, 5.0f, 0.0f));
+    SphereCollider &ballCol =
+        sphere.AddComponentAs<Collider, SphereCollider>(2.0f);
+    ballCol.m_restitution = 0.6f;
+    ballCol.m_friction = 1.0f;
+    ballCol.m_layer = CAT_BALL;
+    ballCol.m_mask = CAT_BALL | CAT_PLAYER | CAT_ENEMY | CAT_GROUND;
 
-        Entity &enemyShootTrigger = createEntity();
-        enemyShootTrigger.AddComponent<Transform>();
-        enemyShootTrigger.AddComponent<FootballerShootTrigger>(&enemy);
-        offset = glm::mat4(1.0f);
-        offset = glm::translate(offset, glm::vec3(0, 0, 3.6f));
-        SphereCollider &enemyBallCol =
-            playerShootTrigger.AddComponentAs<Collider, SphereCollider>(
-                1.1f, offset, true);
-
-        enemyBallCol.m_layer = CAT_PLAYER;
-        enemyBallCol.m_mask = CAT_BALL;
-
-        Entity &enemyGrounded = createEntity();
-        enemyGrounded.AddComponent<Transform>();
-        SphereCollider &enemyGroundCol =
-            enemyGrounded.AddComponentAs<Collider, SphereCollider>(
-                0.5f, glm::mat4(1.0f), true);
-        enemyGroundCol.m_layer = CAT_ENEMY;
-        enemyGroundCol.m_mask = CAT_GROUND | CAT_BALL | CAT_PLAYER;
-        enemyGrounded.AddComponent<PlayerGrounded>(&enemy,
-                                                   glm::vec3(0, -1.1f, 0));
-
-        Entity &sphere = createEntity();
-        sphere.AddComponent<Transform>();
-        sphere.AddComponent<MeshRenderer>(ballModel, defaultShader);
-        sphere.GetComponent<Transform>()->setScale(glm::vec3(2.5f));
-        sphere.GetComponent<Transform>()->setPosition(
-            glm::vec3(static_cast<float>(i) / 100, 5.0f, 0.0f));
-        SphereCollider &ballCol =
-            sphere.AddComponentAs<Collider, SphereCollider>(2.0f);
-        ballCol.m_restitution = 0.6f;
-        ballCol.m_friction = 1.0f;
-        ballCol.m_layer = CAT_BALL;
-        ballCol.m_mask = CAT_BALL | CAT_PLAYER | CAT_ENEMY | CAT_GROUND;
-
-        sphere.AddComponent<Rigidbody>(0.5f, 0.3f, 30.0f, 0.8f, 0.8f);
-        Rigidbody *sphereRb = sphere.GetComponent<Rigidbody>();
-        sphereRb->m_invInertiaTensor =
-            Rigidbody::createSphereInverseInertiaTensor(10.0f, 2.0f);
-        sphere.AddComponent<Ball>();
-
-#ifdef AI_TRAINING
-        playerCol.m_arenaId = i;
-        playerBallCol.m_arenaId = i;
-        groundCol.m_arenaId = i;
-        enemyCol.m_arenaId = i;
-        enemyBallCol.m_arenaId = i;
-        enemyGroundCol.m_arenaId = i;
-        ballCol.m_arenaId = i;
-#endif
-    }
+    sphere.AddComponent<Rigidbody>(0.5f, 0.3f, 30.0f, 0.8f, 0.8f);
+    Rigidbody *sphereRb = sphere.GetComponent<Rigidbody>();
+    sphereRb->m_invInertiaTensor =
+        Rigidbody::createSphereInverseInertiaTensor(10.0f, 2.0f);
+    sphere.AddComponent<Ball>();
 
     Entity &sun = createEntity();
     sun.AddComponent<Transform>(glm::vec3(0, 50, 0),
@@ -189,6 +142,7 @@ void BaseScene::init()
     sun.AddComponent<DirectionalLight>(glm::vec3(1.0f, 1.0f, 1.0f), 0.3f, 0.6f,
                                        0.4f);
 
+    enemyController.init(&player, &sphere, m_enemyGatePos, m_playerGatePos);
     std::cout << "Scene initialized successfully\n";
 }
 
@@ -443,4 +397,10 @@ void BaseScene::generateGates(glm::vec2 pitchSize, glm::vec3 gateSize,
         boxCol.m_layer = CAT_GROUND;
         boxCol.m_mask = CAT_BALL | CAT_PLAYER | CAT_ENEMY;
     }
+
+    m_playerGatePos =
+
+        glm::vec3(0.0f, gateSize.y / 2.0f, pitchSize.x / 2.0f - gateSize.z);
+    m_enemyGatePos =
+        glm::vec3(0.0f, gateSize.y / 2.0f, -pitchSize.x / 2.0f + gateSize.z);
 }

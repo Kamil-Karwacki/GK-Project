@@ -1,4 +1,5 @@
 #include "input.hpp"
+#include <iostream>
 
 InputManager::InputManager(GLFWwindow *window)
 {

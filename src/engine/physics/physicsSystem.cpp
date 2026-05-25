@@ -523,14 +523,6 @@ void PhysicsSystem::generateContacts(
             if (!aHitsB || !bHitsA)
                 continue;
 
-#ifdef AI_TRAINING
-            if (colA->m_arenaId != colB->m_arenaId && colA->m_arenaId != -1 &&
-                colB->m_arenaId != -1)
-            {
-                continue;
-            }
-#endif
-
             if (colA->m_type == ColliderType::Sphere &&
                 colB->m_type == ColliderType::Sphere)
             {
