@@ -8,7 +8,8 @@ enum class ColliderType
 {
     Sphere,
     Box,
-    Halfspace
+    Halfspace,
+    Plane
 };
 
 enum CollisionLayer

@@ -3,9 +3,11 @@
 #include <vector>
 
 #include "world/components/light.hpp"
-#include "world/components/meshRenderer.hpp"
 #include "world/components/transform.hpp"
 #include "world/entity.hpp"
+
+class MeshRenderer;
+class Shader;
 
 class RenderSystem
 {

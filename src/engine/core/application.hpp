@@ -5,7 +5,7 @@
 #include "graphics/shader.hpp"
 #include "input.hpp"
 #include "window.hpp"
-#include "world/scene.hpp"
+#include "world/baseScene.hpp"
 
 class Application
 {
@@ -28,10 +28,12 @@ class Application
     Shader *getShader(const std::string &name);
     unsigned int getWhiteTexture() { return whiteTexture; }
 
-    void loadScene(std::unique_ptr<Scene> scene);
+    void loadScene(std::unique_ptr<BaseScene> scene);
+
+    std::unique_ptr<Window> m_window;
+    std::unique_ptr<BaseScene> m_activeScene;
 
   private:
-    std::unique_ptr<Window> m_window;
     std::unique_ptr<InputManager> m_inputManager;
 
     double m_lastFrameTime = 0.0f;
@@ -41,6 +43,4 @@ class Application
 
     unsigned int whiteTexture;
     std::unordered_map<std::string, std::unique_ptr<Shader>> m_shaders;
-
-    std::unique_ptr<Scene> m_activeScene;
 };

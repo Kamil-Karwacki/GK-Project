@@ -1,7 +1,8 @@
 #pragma once
 
 #include "world/behaviour.hpp"
-#include "world/entity.hpp"
+
+class Entity;
 
 class PlayerGrounded : public Behaviour
 {

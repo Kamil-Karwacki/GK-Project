@@ -1,12 +1,12 @@
 #pragma once
 #include "glm/ext/vector_float2.hpp"
 #include "graphics/shader.hpp"
-#include "world/scene.hpp"
+#include "world/baseScene.hpp"
 
-class BaseScene : public Scene
+class DefaultScene : public BaseScene
 {
   public:
-    using Scene::Scene;
+    using BaseScene::BaseScene;
     void init() override;
     void update(float deltaTime) override;
     void fixedUpdate(float deltaTime) override;
@@ -18,5 +18,6 @@ class BaseScene : public Scene
     void generateGates(glm::vec2 pitchSize, glm::vec3 gateSize,
                        float gateThickness, Shader *defaultShader);
 
-  private:
+    glm::vec3 m_playerGatePos;
+    glm::vec3 m_enemyGatePos;
 };

@@ -3,6 +3,8 @@
 #include <glad/glad.h>
 
 #include <iostream>
+#include <pmmintrin.h>
+#include <xmmintrin.h>
 
 #include "GLFW/glfw3.h"
 #include "debug.hpp"
@@ -10,6 +12,10 @@
 #include "input.hpp"
 #include "window.hpp"
 #include "world/entity.hpp"
+
+#include <imgui.h>
+#include <imgui_impl_glfw.h>
+#include <imgui_impl_opengl3.h>
 
 Application *Application::s_Instance = nullptr;
 
@@ -50,6 +56,22 @@ Application::Application() : m_isRunning(true)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+    // fix for Denormal Floats
+    _MM_SET_FLUSH_ZERO_MODE(_MM_FLUSH_ZERO_ON);
+    _MM_SET_DENORMALS_ZERO_MODE(_MM_DENORMALS_ZERO_ON);
+
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO &io = ImGui::GetIO();
+    (void)io;
+
+    ImGui::StyleColorsDark();
+
+    ImGui_ImplGlfw_InitForOpenGL(m_window->getNativeWindow(), true);
+
+    const char *glsl_version = "#version 450";
+    ImGui_ImplOpenGL3_Init(glsl_version);
 }
 
 Application::~Application() { glfwTerminate(); }
@@ -126,7 +148,7 @@ Shader *Application::getShader(const std::string &name)
     return nullptr;
 }
 
-void Application::loadScene(std::unique_ptr<Scene> scene)
+void Application::loadScene(std::unique_ptr<BaseScene> scene)
 {
     m_activeScene = std::move(scene);
     if (m_activeScene)

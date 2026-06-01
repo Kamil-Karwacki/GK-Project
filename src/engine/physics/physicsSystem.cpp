@@ -8,8 +8,6 @@
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/norm.hpp>
 
-#include "core/debug.hpp"
-
 bool PhysicsSystem::sphereAndSphere(SphereCollider &one, SphereCollider &two,
                                     Rigidbody *rbA, Rigidbody *rbB)
 {
@@ -468,6 +466,8 @@ void PhysicsSystem::generateContacts(
     std::vector<std::unique_ptr<Entity>> &entities)
 {
     m_contacts.clear();
+    m_physicsNodes.clear();
+
     if (entities.size() < 2)
         return;
 
@@ -477,111 +477,106 @@ void PhysicsSystem::generateContacts(
         if (!transform)
             continue;
 
-        std::vector<TransformableCollider *> colliders =
-            entity->GetComponents<TransformableCollider>();
-        if (colliders.empty())
-            continue;
+        Collider *collider = entity->GetComponent<Collider>();
 
-        for (auto &collider : colliders)
+        if (collider)
         {
-            collider->m_worldTransform =
-                transform->getModelMatrix() * collider->m_offset;
+            Rigidbody *rb = entity->GetComponent<Rigidbody>();
+            m_physicsNodes.push_back({collider, rb});
+
+            if (collider->m_type != ColliderType::Sphere &&
+                collider->m_type != ColliderType::Box)
+                continue;
+
+            TransformableCollider *transformable =
+                static_cast<TransformableCollider *>(collider);
+
+            transformable->m_worldTransform =
+                transform->getModelMatrix() * transformable->m_offset;
         }
     }
 
-    for (size_t i = 0; i < entities.size(); i++)
+    for (size_t i = 0; i < m_physicsNodes.size(); ++i)
     {
-        Entity *entityA = entities[i].get();
-        Rigidbody *rbA = entityA->GetComponent<Rigidbody>();
+        Rigidbody *rbA = m_physicsNodes[i].rb;
+        Collider *colA = m_physicsNodes[i].col;
 
-        std::vector<Collider *> collidersA = entityA->GetComponents<Collider>();
-        if (collidersA.empty())
+        if (!colA)
             continue;
 
-        for (size_t j = i + 1; j < entities.size(); j++)
+        for (size_t j = i + 1; j < m_physicsNodes.size(); ++j)
         {
-            Entity *entityB = entities[j].get();
-            Rigidbody *rbB = entityB->GetComponent<Rigidbody>();
+            Rigidbody *rbB = m_physicsNodes[j].rb;
+            Collider *colB = m_physicsNodes[j].col;
 
-            std::vector<Collider *> collidersB =
-                entityB->GetComponents<Collider>();
-            if (collidersB.empty())
+            if (!colB)
                 continue;
 
-            for (Collider *colA : collidersA)
-            {
-                for (Collider *colB : collidersB)
-                {
-                    bool aHitsB = (colA->m_mask & colB->m_layer) != 0;
-                    bool bHitsA = (colB->m_mask & colA->m_layer) != 0;
-                    if (!aHitsB || !bHitsA)
-                        continue;
+            if (!rbA && !rbB && !colA->m_isTrigger && !colB->m_isTrigger)
+                continue;
 
-                    if (colA->m_type == ColliderType::Sphere &&
-                        colB->m_type == ColliderType::Sphere)
-                    {
-                        auto *sA = static_cast<SphereCollider *>(colA);
-                        auto *sB = static_cast<SphereCollider *>(colB);
-                        sphereAndSphere(*sA, *sB, rbA, rbB);
-                    }
-                    else if (colA->m_type == ColliderType::Box &&
-                             colB->m_type == ColliderType::Sphere)
-                    {
-                        auto *bA = static_cast<BoxCollider *>(colA);
-                        auto *sB = static_cast<SphereCollider *>(colB);
-                        boxAndSphere(*bA, *sB, rbA, rbB);
-                    }
-                    else if (colA->m_type == ColliderType::Sphere &&
-                             colB->m_type == ColliderType::Box)
-                    {
-                        auto *sA = static_cast<SphereCollider *>(colA);
-                        auto *bB = static_cast<BoxCollider *>(colB);
-                        boxAndSphere(*bB, *sA, rbB, rbA);
-                    }
-                    else if (colA->m_type == ColliderType::Box &&
-                             colB->m_type == ColliderType::Box)
-                    {
-                        auto *bA = static_cast<BoxCollider *>(colA);
-                        auto *bB = static_cast<BoxCollider *>(colB);
-                        boxAndBox(*bA, *bB, rbA, rbB);
-                    }
-                    else if (colA->m_type == ColliderType::Sphere &&
-                             colB->m_type == ColliderType::Halfspace)
-                    {
-                        auto *sA = static_cast<SphereCollider *>(colA);
-                        auto *pB = static_cast<HalfspaceCollider *>(colB);
-                        sphereAndHalfspace(*sA, *pB, rbA, rbB);
-                    }
-                    else if (colA->m_type == ColliderType::Halfspace &&
-                             colB->m_type == ColliderType::Sphere)
-                    {
-                        auto *pA = static_cast<HalfspaceCollider *>(colA);
-                        auto *sB = static_cast<SphereCollider *>(colB);
-                        sphereAndHalfspace(*sB, *pA, rbB, rbA);
-                    }
-                    else if (colA->m_type == ColliderType::Box &&
-                             colB->m_type == ColliderType::Halfspace)
-                    {
-                        auto *bA = static_cast<BoxCollider *>(colA);
-                        auto *pB = static_cast<HalfspaceCollider *>(colB);
-                        boxAndHalfspace(*bA, *pB, rbA, rbB);
-                    }
-                    else if (colA->m_type == ColliderType::Halfspace &&
-                             colB->m_type == ColliderType::Box)
-                    {
-                        auto *pA = static_cast<HalfspaceCollider *>(colA);
-                        auto *bB = static_cast<BoxCollider *>(colB);
-                        boxAndHalfspace(*bB, *pA, rbB, rbA);
-                    }
-                }
+            bool aHitsB = (colA->m_mask & colB->m_layer) != 0;
+            bool bHitsA = (colB->m_mask & colA->m_layer) != 0;
+            if (!aHitsB || !bHitsA)
+                continue;
+
+            if (colA->m_type == ColliderType::Sphere &&
+                colB->m_type == ColliderType::Sphere)
+            {
+                auto *sA = static_cast<SphereCollider *>(colA);
+                auto *sB = static_cast<SphereCollider *>(colB);
+                sphereAndSphere(*sA, *sB, rbA, rbB);
+            }
+            else if (colA->m_type == ColliderType::Box &&
+                     colB->m_type == ColliderType::Sphere)
+            {
+                auto *bA = static_cast<BoxCollider *>(colA);
+                auto *sB = static_cast<SphereCollider *>(colB);
+                boxAndSphere(*bA, *sB, rbA, rbB);
+            }
+            else if (colA->m_type == ColliderType::Sphere &&
+                     colB->m_type == ColliderType::Box)
+            {
+                auto *sA = static_cast<SphereCollider *>(colA);
+                auto *bB = static_cast<BoxCollider *>(colB);
+                boxAndSphere(*bB, *sA, rbB, rbA);
+            }
+            else if (colA->m_type == ColliderType::Box &&
+                     colB->m_type == ColliderType::Box)
+            {
+                auto *bA = static_cast<BoxCollider *>(colA);
+                auto *bB = static_cast<BoxCollider *>(colB);
+                boxAndBox(*bA, *bB, rbA, rbB);
+            }
+            else if (colA->m_type == ColliderType::Sphere &&
+                     colB->m_type == ColliderType::Halfspace)
+            {
+                auto *sA = static_cast<SphereCollider *>(colA);
+                auto *pB = static_cast<HalfspaceCollider *>(colB);
+                sphereAndHalfspace(*sA, *pB, rbA, rbB);
+            }
+            else if (colA->m_type == ColliderType::Halfspace &&
+                     colB->m_type == ColliderType::Sphere)
+            {
+                auto *pA = static_cast<HalfspaceCollider *>(colA);
+                auto *sB = static_cast<SphereCollider *>(colB);
+                sphereAndHalfspace(*sB, *pA, rbB, rbA);
+            }
+            else if (colA->m_type == ColliderType::Box &&
+                     colB->m_type == ColliderType::Halfspace)
+            {
+                auto *bA = static_cast<BoxCollider *>(colA);
+                auto *pB = static_cast<HalfspaceCollider *>(colB);
+                boxAndHalfspace(*bA, *pB, rbA, rbB);
+            }
+            else if (colA->m_type == ColliderType::Halfspace &&
+                     colB->m_type == ColliderType::Box)
+            {
+                auto *pA = static_cast<HalfspaceCollider *>(colA);
+                auto *bB = static_cast<BoxCollider *>(colB);
+                boxAndHalfspace(*bB, *pA, rbB, rbA);
             }
         }
-
-        /*for (Contact& c : m_contacts)
-        {
-            Debug::addLine(c.m_contactPoint, c.m_contactPoint +
-        c.m_contactNormal * 5.0f, glm::vec3(1.0f, 1.0f, 1.0f), 0.5f);
-        }*/
     }
 }
 
@@ -594,6 +589,9 @@ void PhysicsSystem::resolveContacts(float deltaTime)
     {
         c.calculateInternals(deltaTime);
     }
+
+    m_positionIterations = m_contacts.size() * 2;
+    m_velocityIterations = m_contacts.size() * 2;
 
     adjustPositions();
 

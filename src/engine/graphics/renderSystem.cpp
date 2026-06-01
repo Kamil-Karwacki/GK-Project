@@ -1,5 +1,6 @@
 #include "renderSystem.hpp"
 
+#include "world/components/meshRenderer.hpp"
 #include <glm/glm.hpp>
 #include <memory>
 
