@@ -466,11 +466,10 @@ void PhysicsSystem::generateContacts(
     std::vector<std::unique_ptr<Entity>> &entities)
 {
     m_contacts.clear();
+    m_physicsNodes.clear();
+
     if (entities.size() < 2)
         return;
-
-    std::vector<PhysicsNode> physicsNodes;
-    physicsNodes.reserve(entities.size());
 
     for (auto &entity : entities)
     {
@@ -483,7 +482,7 @@ void PhysicsSystem::generateContacts(
         if (collider)
         {
             Rigidbody *rb = entity->GetComponent<Rigidbody>();
-            physicsNodes.push_back({collider, rb});
+            m_physicsNodes.push_back({collider, rb});
 
             if (collider->m_type != ColliderType::Sphere &&
                 collider->m_type != ColliderType::Box)
@@ -497,18 +496,18 @@ void PhysicsSystem::generateContacts(
         }
     }
 
-    for (size_t i = 0; i < physicsNodes.size(); ++i)
+    for (size_t i = 0; i < m_physicsNodes.size(); ++i)
     {
-        Rigidbody *rbA = physicsNodes[i].rb;
-        Collider *colA = physicsNodes[i].col;
+        Rigidbody *rbA = m_physicsNodes[i].rb;
+        Collider *colA = m_physicsNodes[i].col;
 
         if (!colA)
             continue;
 
-        for (size_t j = i + 1; j < physicsNodes.size(); ++j)
+        for (size_t j = i + 1; j < m_physicsNodes.size(); ++j)
         {
-            Rigidbody *rbB = physicsNodes[j].rb;
-            Collider *colB = physicsNodes[j].col;
+            Rigidbody *rbB = m_physicsNodes[j].rb;
+            Collider *colB = m_physicsNodes[j].col;
 
             if (!colB)
                 continue;
@@ -578,12 +577,6 @@ void PhysicsSystem::generateContacts(
                 boxAndHalfspace(*bB, *pA, rbB, rbA);
             }
         }
-
-        /*for (Contact& c : m_contacts)
-        {
-            Debug::addLine(c.m_contactPoint, c.m_contactPoint +
-        c.m_contactNormal * 5.0f, glm::vec3(1.0f, 1.0f, 1.0f), 0.5f);
-        }*/
     }
 }
 

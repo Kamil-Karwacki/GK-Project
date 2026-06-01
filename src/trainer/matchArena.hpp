@@ -23,6 +23,10 @@ struct MatchArena
     float m_prevBallToGateA;
     float m_prevBallToGateB;
 
+    uint64_t m_totalFrames = 0;
+    float m_prevAgentAToBall = 0.0f;
+    float m_prevAgentBToBall = 0.0f;
+
     MatchArena(int id);
 
     Entity &createEntity(Scene *scene);

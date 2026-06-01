@@ -41,17 +41,17 @@ class PhysicsSystem
     void notifyColliision(Collider *colliderA, Collider *colliderB);
 
   private:
-    std::vector<Contact> m_contacts;
-    float m_positionEpsilon = 0.01f;
-    float m_velocityEpsilon = 0.01f;
-    unsigned int m_positionIterations = 1;
-    unsigned int m_velocityIterations = 1;
-
     struct PhysicsNode
     {
         Collider *col;
         Rigidbody *rb;
     };
+    std::vector<Contact> m_contacts;
+    std::vector<PhysicsNode> m_physicsNodes;
+    float m_positionEpsilon = 0.01f;
+    float m_velocityEpsilon = 0.01f;
+    unsigned int m_positionIterations = 1;
+    unsigned int m_velocityIterations = 1;
 
     /// @brief Casts box onto an axis.
     /// @param box box

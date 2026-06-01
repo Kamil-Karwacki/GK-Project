@@ -7,6 +7,7 @@
 
 void Footballer::onUpdate(float deltaTime)
 {
+    m_kickTimer -= deltaTime;
     kickLoop();
     move(deltaTime);
 }
@@ -18,6 +19,8 @@ void Footballer::kickLoop()
     if (!m_shouldKick)
         return;
     m_shouldKick = false;
+    if (m_kickTimer > 0)
+        return;
     if (!m_ball)
         return;
     Rigidbody *ballRb = m_ball->m_entity->GetComponent<Rigidbody>();
@@ -44,6 +47,7 @@ void Footballer::kickLoop()
     float kickModifier = 8.0f / pow(distToBall, 1.5f);
     ballRb->m_forceAcc += m_kickStrength * kickDir * kickModifier;
     m_ball = nullptr;
+    m_kickTimer = 0.5f;
 }
 #define Lerp(current, target, t) (current + (target - current) * t)
 void Footballer::move(float deltaTime)

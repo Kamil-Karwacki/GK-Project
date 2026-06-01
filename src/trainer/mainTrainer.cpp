@@ -17,7 +17,7 @@ int main()
     bool isVisualMode = true;
     const double FIXED_DT = 1.0 / 60.0;
     uint32_t frameCount = 0;
-    static const uint32_t FRAMES_PER_GENERATION = 3600;
+    static const uint32_t FRAMES_PER_GENERATION = 1800;
 
     GeneticTrainer trainer;
 
@@ -40,7 +40,7 @@ int main()
             frameCount++;
             if (frameCount >= FRAMES_PER_GENERATION)
             {
-                trainer.evolvePopulation(*scenePtr);
+                trainer.evolvePopulation(scenePtr->m_arenas);
                 frameCount = 0;
                 std::cout << "Generation finished. Mutating weights.\n";
             }
@@ -59,7 +59,7 @@ int main()
 
                 if (frameCount >= FRAMES_PER_GENERATION)
                 {
-                    trainer.evolvePopulation(*scenePtr);
+                    trainer.evolvePopulation(scenePtr->m_arenas);
 
                     frameCount = 0;
                     std::cout << "Generation finished. Mutating weights.\n";

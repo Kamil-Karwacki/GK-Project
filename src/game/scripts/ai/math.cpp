@@ -33,18 +33,36 @@ void Multiply(const Matrix &A, const Matrix &B, Matrix &out)
         return;
     }
 
-    out.m_rows = A.m_rows;
-    out.m_cols = B.m_cols;
-    out.m_data.assign(A.m_rows * B.m_cols, 0.0);
-
-    for (uint32_t i = 0; i < A.m_rows; ++i)
+    uint32_t outSize = A.m_rows * B.m_cols;
+    if (out.m_data.size() != outSize)
     {
-        for (uint32_t k = 0; k < A.m_cols; ++k)
+        out.m_rows = A.m_rows;
+        out.m_cols = B.m_cols;
+        out.m_data.resize(outSize);
+    }
+
+    std::fill(out.m_data.begin(), out.m_data.end(), 0.0);
+
+    const double *__restrict a_ptr = A.m_data.data();
+    const double *__restrict b_ptr = B.m_data.data();
+    double *__restrict out_ptr = out.m_data.data();
+
+    uint32_t a_rows = A.m_rows;
+    uint32_t a_cols = A.m_cols;
+    uint32_t b_cols = B.m_cols;
+
+    for (uint32_t i = 0; i < a_rows; ++i)
+    {
+        for (uint32_t k = 0; k < a_cols; ++k)
         {
-            double a_ik = A(i, k);
-            for (uint32_t j = 0; j < B.m_cols; ++j)
+            double a_ik = a_ptr[i * a_cols + k];
+            const double *__restrict b_row = &b_ptr[k * b_cols];
+            double *__restrict out_row = &out_ptr[i * b_cols];
+
+#pragma omp simd
+            for (uint32_t j = 0; j < b_cols; ++j)
             {
-                out(i, j) += a_ik * B(k, j);
+                out_row[j] += a_ik * b_row[j];
             }
         }
     }
@@ -78,4 +96,12 @@ Matrix Sigmoid(const Matrix &m)
         result.m_data[i] = 1.0 / (1.0 + std::exp(-m.m_data[i]));
     }
     return result;
+}
+
+void SigmoidInPlace(Matrix &m)
+{
+    for (uint32_t i = 0; i < m.m_data.size(); ++i)
+    {
+        m.m_data[i] = 1.0 / (1.0 + std::exp(-m.m_data[i]));
+    }
 }

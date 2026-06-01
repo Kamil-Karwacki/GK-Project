@@ -195,9 +195,10 @@ void TrainerScene::fixedUpdate(float deltaTime)
 {
     static constexpr float gravity = 42.0f;
 
-#pragma omp parallel for
-    for (auto &arena : m_arenas)
+#pragma omp parallel for schedule(static, 16)
+    for (int i = 0; i < m_arenas.size(); i++)
     {
+        auto &arena = m_arenas[i];
         for (auto &entity : arena.m_entities)
         {
             Rigidbody *rb = entity->GetComponent<Rigidbody>();
@@ -225,6 +226,26 @@ void TrainerScene::fixedUpdate(float deltaTime)
         glm::vec3 agentAPos = transA->getPosition();
         glm::vec3 agentBPos = transB->getPosition();
 
+        float distABall = glm::distance(agentAPos, ballPos);
+        float distBBall = glm::distance(agentBPos, ballPos);
+
+        float deltaAgentA = arena.m_prevAgentAToBall - distABall;
+        float deltaAgentB = arena.m_prevAgentBToBall - distBBall;
+
+        const float decayPhaseFrames = 180000.0f;
+
+        float approachWeight =
+            std::max(0.1f, 1.0f - (arena.m_totalFrames / decayPhaseFrames));
+
+        if (deltaAgentA > 0.0f)
+            arena.m_fitnessA +=
+                deltaAgentA * approachWeight * 0.5f; // 0.5f to mnożnik balansu
+
+        if (deltaAgentB > 0.0f)
+            arena.m_fitnessB += deltaAgentB * approachWeight * 0.5f;
+        arena.m_prevAgentAToBall = distABall;
+        arena.m_prevAgentBToBall = distBBall;
+
         // Reward for pushing the ball closer to enemys gate
         float currBallToGateB = glm::distance(ballPos, arena.m_gateBPos);
         float currBallToGateA = glm::distance(ballPos, arena.m_gateAPos);
@@ -241,8 +262,8 @@ void TrainerScene::fixedUpdate(float deltaTime)
         arena.m_prevBallToGateA = currBallToGateA;
 
         // Reward for being behind the ball in line with the gaet
-        float distABall = glm::distance(agentAPos, ballPos);
-        float distBBall = glm::distance(agentBPos, ballPos);
+        distABall = glm::distance(agentAPos, ballPos);
+        distBBall = glm::distance(agentBPos, ballPos);
 
         if (distABall > 0.5f && currBallToGateB > 0.5f)
         {
@@ -273,7 +294,6 @@ void TrainerScene::fixedUpdate(float deltaTime)
             arena.resetPositions();
         }
     }
-    Scene::fixedUpdate(deltaTime);
 }
 
 void TrainerScene::draw()

@@ -1,20 +1,19 @@
 #include "neuralAgent.hpp"
+#include "scripts/ai/math.hpp"
 #include <fstream>
 #include <iostream>
 
-Matrix NeuralAgent::predict(const Matrix &input) const
+const Matrix NeuralAgent::predict(const Matrix &input)
 {
-    Matrix hidden(m_w1.m_rows, input.m_cols);
-    Multiply(m_w1, input, hidden);
-    Add(hidden, m_b1, hidden);
-    hidden = Sigmoid(hidden);
+    Multiply(m_w1, input, m_hidden);
+    Add(m_hidden, m_b1, m_hidden);
+    SigmoidInPlace(m_hidden);
 
-    Matrix final(m_w2.m_rows, input.m_cols);
-    Multiply(m_w2, hidden, final);
-    Add(final, m_b2, final);
-    final = Sigmoid(final);
+    Multiply(m_w2, m_hidden, m_output);
+    Add(m_output, m_b2, m_output);
+    SigmoidInPlace(m_output);
 
-    return final;
+    return m_output;
 }
 
 bool NeuralAgent::saveToFile(const std::string &filename) const

@@ -25,4 +25,5 @@ class Footballer : public Behaviour
   private:
     void kickLoop();
     bool m_shouldKick = false;
+    float m_kickTimer = 0.0f;
 };

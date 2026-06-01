@@ -38,6 +38,11 @@ void MatchArena::resetPositions()
     glm::vec3 ballStart = m_arenaOffset + glm::vec3(0, 5, 0);
     m_prevBallToGateA = glm::distance(ballStart, m_gateAPos);
     m_prevBallToGateB = glm::distance(ballStart, m_gateBPos);
+
+    m_prevAgentAToBall = glm::distance(
+        m_playerA->GetComponent<Transform>()->getPosition(), ballStart);
+    m_prevAgentBToBall = glm::distance(
+        m_playerB->GetComponent<Transform>()->getPosition(), ballStart);
 }
 
 void MatchArena::fixedUpdate(float deltaTime)

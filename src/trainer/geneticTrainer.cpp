@@ -26,12 +26,12 @@ GeneticTrainer::tournamentSelect(const std::vector<NeuralAgent *> &agents,
     return best;
 }
 
-void GeneticTrainer::evolvePopulation(TrainerScene &scene)
+void GeneticTrainer::evolvePopulation(std::vector<MatchArena> &arenas)
 {
     std::vector<NeuralAgent *> allAgents;
-    allAgents.reserve(scene.m_arenas.size() * 2);
+    allAgents.reserve(arenas.size() * 2);
 
-    for (auto &arena : scene.m_arenas)
+    for (auto &arena : arenas)
     {
         NeuralAgent *agentA = arena.m_playerA->GetComponent<NeuralAgent>();
         agentA->m_fitness = arena.m_fitnessA;
@@ -102,7 +102,7 @@ void GeneticTrainer::evolvePopulation(TrainerScene &scene)
         allAgents[i]->m_fitness = 0.0f;
     }
 
-    for (auto &arena : scene.m_arenas)
+    for (auto &arena : arenas)
     {
         arena.m_fitnessA = 0.0f;
         arena.m_fitnessB = 0.0f;

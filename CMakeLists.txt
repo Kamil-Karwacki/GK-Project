@@ -15,6 +15,7 @@ if(MSVC)
     set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 else()
     set(COMPILER_WARNINGS -Wall -Wextra -pedantic)
+    add_compile_options(-O3)
 endif()
 
 include(FetchContent)
@@ -53,12 +54,19 @@ FetchContent_MakeAvailable(tinyobjloader)
 FetchContent_Declare(
     imgui
     GIT_REPOSITORY https://github.com/ocornut/imgui.git
-    GIT_TAG        v1.92.8 
+    GIT_TAG        v1.92.8
 )
 FetchContent_GetProperties(imgui)
 if(NOT imgui_POPULATED)
     FetchContent_Populate(imgui)
 endif()
+
+FetchContent_Declare(
+    pybind11
+    GIT_REPOSITORY https://github.com/pybind/pybind11.git
+    GIT_TAG        v2.13.6
+)
+FetchContent_MakeAvailable(pybind11)
 
 add_library(imgui_lib STATIC
     ${imgui_SOURCE_DIR}/imgui.cpp
@@ -72,7 +80,7 @@ add_library(imgui_lib STATIC
 
 add_subdirectory(external/glad)
 
-target_include_directories(imgui_lib PUBLIC 
+target_include_directories(imgui_lib PUBLIC
     ${imgui_SOURCE_DIR}
     ${imgui_SOURCE_DIR}/backends
 )
@@ -91,11 +99,12 @@ add_library(HeadSoccerCore STATIC
     src/engine/physics/contact.cpp
     src/engine/physics/physicsSystem.cpp
     src/engine/world/scene.cpp
+    src/engine/world/baseScene.cpp
     src/engine/world/components/collider.cpp
     src/engine/world/components/rigidbody.cpp
     src/engine/world/components/transform.cpp
     src/game/scripts/playerController.cpp
-    src/game/scripts/baseScene.cpp
+    src/game/scripts/defaultScene.cpp
     src/game/scripts/cameraController.cpp
     src/game/scripts/footballer.cpp
     src/game/scripts/ball.cpp
@@ -145,10 +154,11 @@ add_custom_command(TARGET HeadSoccerGame POST_BUILD
 
 find_package(OpenMP REQUIRED COMPONENTS CXX)
 
-add_executable(AITrainer 
+add_executable(AITrainer
     src/trainer/mainTrainer.cpp
     src/trainer/trainerScene.cpp
     src/trainer/geneticTrainer.cpp
+    src/trainer/matchArena.cpp
 )
 
 target_link_libraries(AITrainer PRIVATE HeadSoccerCore OpenMP::OpenMP_CXX)
@@ -159,3 +169,72 @@ add_custom_command(TARGET AITrainer POST_BUILD
     "$<TARGET_FILE_DIR:AITrainer>/assets"
     COMMENT "Copying assets for AI Trainer..."
 )
+
+add_library(HeadSoccerCoreHeadless STATIC
+    src/engine/physics/contact.cpp
+    src/engine/physics/physicsSystem.cpp
+    src/engine/world/scene.cpp
+    src/engine/world/baseScene.cpp
+    src/engine/world/components/collider.cpp
+    src/engine/world/components/rigidbody.cpp
+    src/engine/world/components/transform.cpp
+    src/game/scripts/footballer.cpp
+    src/game/scripts/ball.cpp
+    src/game/scripts/playerGrounded.cpp
+    src/game/scripts/footballerShootTrigger.cpp
+    src/game/scripts/enemyController.cpp
+    src/game/scripts/gateTrigger.cpp
+    src/game/scripts/ai/math.cpp
+    src/game/scripts/ai/neuralAgent.cpp
+    src/trainer/matchArena.cpp
+    src/trainer/headlessApplication.cpp
+    src/trainer/headlessTrainerScene.cpp
+)
+
+target_compile_definitions(HeadSoccerCoreHeadless PUBLIC HEADLESS_MODE)
+
+target_include_directories(HeadSoccerCoreHeadless PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/engine
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/game
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/third_party
+    ${stb_SOURCE_DIR}
+)
+
+target_link_libraries(HeadSoccerCoreHeadless PUBLIC
+    glm::glm
+)
+
+if(UNIX AND NOT APPLE)
+    target_link_libraries(HeadSoccerCoreHeadless PUBLIC ${OPENGL_LIBRARIES} dl pthread)
+endif()
+
+add_executable(AITrainerHeadless
+    src/trainer/mainHeadless.cpp
+    src/trainer/geneticTrainer.cpp
+)
+
+target_compile_definitions(AITrainerHeadless PRIVATE HEADLESS_MODE)
+
+target_link_libraries(AITrainerHeadless PRIVATE
+    HeadSoccerCoreHeadless
+    OpenMP::OpenMP_CXX
+)
+
+if(MINGW)
+    target_link_options(AITrainerHeadless PRIVATE "-fuse-ld=lld")
+endif()
+
+
+pybind11_add_module(soccer_engine
+    src/trainer/pythonBindings.cpp
+    src/trainer/headlessTrainerScene.cpp
+)
+
+target_compile_definitions(soccer_engine PRIVATE HEADLESS_MODE)
+
+target_link_libraries(soccer_engine PRIVATE
+    HeadSoccerCoreHeadless
+    #OpenMP::OpenMP_CXX
+)
+
+target_link_options(soccer_engine PRIVATE "-fuse-ld=lld")

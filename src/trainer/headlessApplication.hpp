@@ -15,7 +15,8 @@ class HeadlessApplication
 
     void loadScene(std::unique_ptr<Scene> scene);
 
-  private:
     std::unique_ptr<Scene> m_activeScene;
+
+  private:
     static HeadlessApplication *s_Instance;
 };
