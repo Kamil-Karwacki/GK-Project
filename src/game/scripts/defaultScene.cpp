@@ -15,6 +15,7 @@
 #include "scripts/ball.hpp"
 #include "scripts/enemyController.hpp"
 #include "scripts/footballerShootTrigger.hpp"
+#include "scripts/pitchGenerator.hpp"
 #include "scripts/playerGrounded.hpp"
 #include "world/components/collider.hpp"
 #include "world/components/light.hpp"
@@ -170,18 +171,23 @@ void DefaultScene::generateTerrain()
 
     glm::vec2 pitchSize = glm::vec2(115, 74);
     pitchSize *= 1.4f;
-    float wallHeight = 4.0f;
-    float bannerLength = 32.0f;
 
     glm::vec2 tribuneOffset = glm::vec2(0, 10);
-    glm::vec2 groundAdd = glm::vec2(tribuneOffset.y * 2);
-    generatePitch(pitchSize, groundAdd, wallHeight, bannerLength,
-                  defaultShader);
-    glm::vec3 gateSize = glm::vec3(30.0f, 11.0f, 7.0f);
-    float gateThickness = 0.7f;
-
-    generateGates(pitchSize, gateSize, gateThickness, defaultShader);
     float tribuneLength = 32.0f;
+
+    PitchGenerator::PitchConfig config;
+    config.gateSize = glm::vec3(30.0f, 11.0f, 7.0f);
+    config.pitchSize = pitchSize;
+
+    PitchGenerator::generatePitch(m_entities, this, glm::vec3(0.0f),
+                                  defaultShader, config);
+
+    auto gatesInfo =
+        PitchGenerator::generateGates(m_entities, this, glm::vec3(0.0f),
+                                      defaultShader, nullptr, nullptr, config);
+
+    m_playerGatePos = gatesInfo.gateAPos;
+    m_enemyGatePos = gatesInfo.gateBPos;
 
     std::shared_ptr<Model> tribuneModel =
         std::make_shared<Model>("assets/models/tribune.obj");
@@ -230,175 +236,4 @@ void DefaultScene::generateTerrain()
             glm::vec3(tribuneScale.x, 1, 1));
         tribuneB.AddComponent<MeshRenderer>(tribuneModel, defaultShader);
     }
-}
-
-void DefaultScene::generatePitch(glm::vec2 pitchSize, glm::vec2 groundAdd,
-                                 float wallHeight, float bannerLength,
-                                 Shader *defaultShader)
-{
-
-    Entity &ground = createEntity();
-    ground.AddComponent<Transform>();
-    ground.AddComponent<MeshRenderer>(
-        std::make_shared<Model>(
-            Mesh::createBox(glm::vec3(pitchSize.y + groundAdd.x, 0.1f,
-                                      pitchSize.x + groundAdd.y),
-                            glm::vec3(0.2f, 0.5f, 0.2f))),
-        defaultShader);
-    Collider &groundCol = ground.AddComponentAs<Collider, HalfspaceCollider>(
-        glm::vec3(0.0f, 1.0f, 0.0f), 0.0f);
-    groundCol.m_layer = CAT_GROUND;
-    groundCol.m_mask = CAT_PLAYER | CAT_ENEMY | CAT_BALL;
-    groundCol.m_restitution = 0.4f;
-
-    std::shared_ptr<Model> bannerModelA =
-        std::make_shared<Model>("assets/models/baner1.obj");
-    glm::vec2 bannerCount = glm::round(pitchSize / bannerLength);
-    glm::vec2 bannerLengths = pitchSize / bannerCount;
-    glm::vec2 bannerScale = bannerLengths / bannerLength;
-    for (size_t i = 0; i < bannerCount.y; i++)
-    {
-        // top
-        Entity &wallA = createEntity();
-        Transform &transA = wallA.AddComponent<Transform>();
-        transA.setPosition(glm::vec3((pitchSize.y / 2.0f) -
-                                         (bannerLengths.y / 2.0f) -
-                                         bannerLengths.y * i,
-                                     0.0f, pitchSize.x / 2.0f));
-        transA.setScale(glm::vec3(bannerScale.y, 1.0f, 1.0f));
-        transA.setRotation(
-            glm::vec3(glm::radians(90.0f), glm::radians(180.0f), 0));
-        wallA.AddComponent<MeshRenderer>(
-            bannerModelA, defaultShader,
-            glm::vec3(0.0f, wallHeight / 2.0f, 0.0f));
-        if (i == 0)
-        {
-
-            auto &wallCol = wallA.AddComponentAs<Collider, HalfspaceCollider>(
-                glm::vec3(0.0f, 0.0f, -1.0f), -pitchSize.x / 2.0f);
-            wallCol.m_layer = CAT_GROUND;
-            wallCol.m_mask = CAT_BALL | CAT_PLAYER | CAT_ENEMY;
-        }
-
-        // bottom
-        Entity &wallB = createEntity();
-        Transform &transB = wallB.AddComponent<Transform>();
-        transB.setPosition(glm::vec3((pitchSize.y / 2.0f) -
-                                         (bannerLengths.y / 2.0f) -
-                                         bannerLengths.y * i,
-                                     0.0f, -pitchSize.x / 2.0f));
-        transB.setScale(glm::vec3(bannerScale.y, 1.0f, 1.0f));
-        transB.setRotation(
-            glm::vec3(glm::radians(90.0f), glm::radians(180.0f), 0));
-        wallB.AddComponent<MeshRenderer>(
-            bannerModelA, defaultShader,
-            glm::vec3(0.0f, wallHeight / 2.0f, 0.0f));
-        if (i == 0)
-        {
-            HalfspaceCollider &wallCol =
-                wallB.AddComponentAs<Collider, HalfspaceCollider>(
-                    glm::vec3(0.0f, 0.0f, 1.0f), -pitchSize.x / 2.0f);
-            wallCol.m_layer = CAT_GROUND;
-            wallCol.m_mask = CAT_BALL | CAT_PLAYER | CAT_ENEMY;
-        }
-    }
-
-    for (size_t i = 0; i < bannerCount.x; i++)
-    {
-        // left
-        Entity &wallA = createEntity();
-        Transform &transA = wallA.AddComponent<Transform>();
-        transA.setPosition(glm::vec3(pitchSize.y / 2.0f, 0.0f,
-                                     (-pitchSize.x / 2.0f) +
-                                         (bannerLengths.x / 2.0f) +
-                                         bannerLengths.x * i));
-        transA.setScale(glm::vec3(bannerScale.x, 1.0f, 1.0f));
-        transA.setRotation(
-            glm::vec3(glm::radians(90.0f), glm::radians(270.0f), 0));
-        wallA.AddComponent<MeshRenderer>(
-            bannerModelA, defaultShader,
-            glm::vec3(0.0f, wallHeight / 2.0f, 0.0f));
-        if (i == 0)
-        {
-            HalfspaceCollider &wallCol =
-                wallA.AddComponentAs<Collider, HalfspaceCollider>(
-                    glm::vec3(-1.0f, 0.0f, 0.0f), -pitchSize.y / 2.0f);
-            wallCol.m_layer = CAT_GROUND;
-            wallCol.m_mask = CAT_BALL | CAT_PLAYER | CAT_ENEMY;
-        }
-
-        // right
-        Entity &wallB = createEntity();
-        Transform &transB = wallB.AddComponent<Transform>();
-        transB.setPosition(glm::vec3(-pitchSize.y / 2.0f, 0.0f,
-                                     (-pitchSize.x / 2.0f) +
-                                         (bannerLengths.x / 2.0f) +
-                                         bannerLengths.x * i));
-        transB.setScale(glm::vec3(bannerScale.x, 1.0f, 1.0f));
-        transB.setRotation(
-            glm::vec3(glm::radians(90.0f), glm::radians(90.0f), 0));
-        wallB.AddComponent<MeshRenderer>(
-            bannerModelA, defaultShader,
-            glm::vec3(0.0f, wallHeight / 2.0f, 0.0f));
-        if (i == 0)
-        {
-            HalfspaceCollider &wallCol =
-                wallB.AddComponentAs<Collider, HalfspaceCollider>(
-                    glm::vec3(1.0f, 0.0f, 0.0f), -pitchSize.y / 2.0f);
-            wallCol.m_layer = CAT_GROUND;
-            wallCol.m_mask = CAT_BALL | CAT_PLAYER | CAT_ENEMY;
-        }
-    }
-}
-
-void DefaultScene::generateGates(glm::vec2 pitchSize, glm::vec3 gateSize,
-                                 float gateThickness, Shader *defaultShader)
-{
-    for (int j = 1; j > -2; j -= 2)
-    {
-        for (int i = 1; i > -2; i -= 2)
-        {
-            Entity &bar = createEntity();
-            Transform &trans = bar.AddComponent<Transform>();
-            trans.setPosition(
-                glm::vec3(i * gateSize.x / 2.0f, gateSize.y / 2.0f,
-                          j * pitchSize.x / 2.0f - gateSize.z * j));
-            bar.AddComponent<MeshRenderer>(
-                std::make_shared<Model>(Mesh::createBox(
-                    glm::vec3(gateThickness, gateSize.y, gateThickness),
-                    glm::vec3(0.8f, 0.8f, 0.8f))),
-                defaultShader);
-            BoxCollider &boxCol = bar.AddComponentAs<Collider, BoxCollider>(
-                glm::vec3(gateThickness / 2.0f, gateSize.y / 2.0f,
-                          gateThickness / 2.0f));
-            boxCol.m_layer = CAT_GROUND;
-            boxCol.m_mask = CAT_BALL | CAT_PLAYER | CAT_ENEMY;
-        }
-    }
-
-    for (int i = 1; i > -2; i -= 2)
-    {
-        Entity &topBar = createEntity();
-        Transform &topTrans = topBar.AddComponent<Transform>();
-        topTrans.setPosition(glm::vec3(
-            0.0f, gateSize.y, i * pitchSize.x / 2.0f - gateSize.z * i));
-        topTrans.setRotation(glm::vec3(0.0f, 0.0f, glm::radians(90.0f)));
-        topBar.AddComponent<MeshRenderer>(
-            std::make_shared<Model>(Mesh::createBox(
-                glm::vec3(gateThickness, gateSize.x + gateThickness,
-                          gateThickness),
-                glm::vec3(0.8f, 0.8f, 0.8f))),
-            defaultShader);
-        BoxCollider &boxCol =
-            topBar.AddComponentAs<Collider, BoxCollider>(glm::vec3(
-                gateThickness / 2.0f, gateSize.x / 2.0f, gateThickness / 2.0f));
-        boxCol.m_layer = CAT_GROUND;
-        boxCol.m_mask = CAT_BALL | CAT_PLAYER | CAT_ENEMY;
-    }
-
-    m_playerGatePos =
-
-        glm::vec3(0.0f, gateSize.y / 2.0f, pitchSize.x / 2.0f - gateSize.z);
-    m_enemyGatePos =
-        glm::vec3(0.0f, gateSize.y / 2.0f, -pitchSize.x / 2.0f + gateSize.z);
 }
