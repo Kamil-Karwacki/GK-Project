@@ -12,7 +12,7 @@ class PhysicsSystem;
 
 class BaseScene : public Scene
 {
-  public:
+public:
     BaseScene(unsigned int whiteTextureId);
     ~BaseScene() override;
 
@@ -20,12 +20,13 @@ class BaseScene : public Scene
     void update(float deltaTime) override;
     void fixedUpdate(float deltaTime) override;
     void draw() override;
+    virtual void drawUI() override {}
 
     glm::mat4 getMainViewMatrix() const;
     glm::mat4 getMainProjectionMatrix() const;
     void setMainCamera(Camera *camera) { m_mainCamera = camera; }
 
-  protected:
+protected:
     std::unique_ptr<RenderSystem> m_renderSystem;
     Camera *m_mainCamera = nullptr;
 };

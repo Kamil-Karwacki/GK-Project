@@ -61,7 +61,9 @@ bool NeuralAgent::loadFromFile(const std::string &filename)
 
         if (rows != m.m_rows || cols != m.m_cols)
         {
-            std::cerr << "Error: Wrong matrix size in the file!\n";
+            std::cerr << "Error: Wrong matrix size in the file! Expected "
+                      << m.m_rows << "x" << m.m_cols << ". Received: " << rows
+                      << "x" << cols << "\n";
             return;
         }
 

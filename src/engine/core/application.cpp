@@ -100,6 +100,10 @@ void Application::run()
         m_inputManager->update();
         glfwPollEvents();
 
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+
         glClearColor(0.5f, 0.8f, 0.95f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -118,6 +122,10 @@ void Application::run()
         debugShader->setMat4("projection", 1, GL_FALSE,
                              &m_activeScene->getMainProjectionMatrix()[0][0]);
         Debug::render(*debugShader);
+
+        m_activeScene->drawUI();
+        ImGui::Render();
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
         if (m_window->ShouldClose())
         {

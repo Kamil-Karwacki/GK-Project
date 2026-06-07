@@ -10,6 +10,7 @@
 #include "glm/ext/vector_float3.hpp"
 #include "glm/trigonometric.hpp"
 #include "graphics/model.hpp"
+#include "imgui.h"
 #include "playerController.hpp"
 #include "scripts/ai/neuralAgent.hpp"
 #include "scripts/ball.hpp"
@@ -83,7 +84,7 @@ void DefaultScene::init()
     enemy.AddComponent<Transform>(glm::vec3(10, 10, 10), glm::vec3(0),
                                   glm::vec3(1.5f));
     EnemyController &enemyController = enemy.AddComponent<EnemyController>();
-    NeuralAgent &agent = enemy.AddComponent<NeuralAgent>(38, 64, 6);
+    NeuralAgent &agent = enemy.AddComponent<NeuralAgent>(40, 64, 6);
     agent.loadFromFile("best_brain.txt");
     enemy.AddComponent<MeshRenderer>(playerModel, defaultShader);
     enemy.AddComponent<Rigidbody>(10.0f, 0.1f, 0.5f, 0.99f, 0.99f);
@@ -163,6 +164,53 @@ void DefaultScene::fixedUpdate(float deltaTime)
 }
 
 void DefaultScene::draw() { BaseScene::draw(); }
+
+void DefaultScene::drawUI()
+{
+    ImGuiIO &io = ImGui::GetIO();
+
+    ImGuiWindowFlags flags =
+        ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
+        ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove |
+        ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoSavedSettings;
+
+    ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x * 0.5f, 10.0f),
+                            ImGuiCond_Always, ImVec2(0.5f, 0.0f));
+    ImGui::SetNextWindowBgAlpha(0.65f);
+
+    ImGui::Begin("GameScoreboard", nullptr, flags);
+
+    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(15.0f, 0.0f));
+
+    ImGui::TextColored(ImVec4(0.3f, 0.6f, 1.0f, 1.0f), "PLAYER");
+
+    ImGui::SameLine();
+    ImGui::SetWindowFontScale(3.0f);
+
+    ImGui::Text("%d", m_playerScore);
+    ImGui::SameLine();
+    ImGui::Text(":");
+    ImGui::SameLine();
+    ImGui::Text("%d", m_enemyScore);
+
+    ImGui::SetWindowFontScale(1.0f);
+    ImGui::SameLine();
+
+    ImGui::TextColored(ImVec4(1.0f, 0.4f, 0.4f, 1.0f), "ENEMY");
+
+    ImGui::PopStyleVar();
+
+    ImVec2 windowSize = ImGui::GetWindowSize();
+    float textWidth = ImGui::CalcTextSize("00:00").x;
+    ImGui::SetCursorPosX((windowSize.x - textWidth) * 0.5f);
+
+    int totalSeconds = static_cast<int>(m_matchTimer);
+    int minutes = totalSeconds / 60;
+    int seconds = totalSeconds % 60;
+    ImGui::Text("%02d:%02d", minutes, seconds);
+
+    ImGui::End();
+}
 
 void DefaultScene::generateTerrain()
 {

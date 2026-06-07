@@ -74,7 +74,7 @@ void EnemyController::onUpdate(float deltaTime)
         Rigidbody *ballRb = m_ball->GetComponent<Rigidbody>();
 
         uint16_t i = 0;
-        const int NUM_INPUTS = 38;
+        const int NUM_INPUTS = 40;
 
         glm::vec3 forward = playerTrans->getFront();
         glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
@@ -188,13 +188,26 @@ void EnemyController::onUpdate(float deltaTime)
         m_inputMatrix(i++, 0) = normKick;
         m_inputMatrix(i++, 0) = (isGrounded ? 1.0f : 0.0f);
 
+        glm::vec3 predictedBallPos =
+            ballTrans->getPosition() + ballRb->m_velocity * 0.3f;
+        glm::vec3 predictedBallRel =
+            predictedBallPos - playerTrans->getPosition();
+        glm::vec3 predictedBallDir = glm::vec3(0.0f);
+        float predictedBallDist = glm::length(predictedBallRel);
+        if (predictedBallDist > 0.0001f)
+            predictedBallDir = predictedBallRel / predictedBallDist;
+
+        m_inputMatrix(i++, 0) = glm::dot(predictedBallDir, right);
+        m_inputMatrix(i++, 0) = glm::dot(predictedBallDir, forward);
+
         Matrix outputs = agent->predict(m_inputMatrix);
         m_lastMoveY = (outputs(0, 0) * 2.0f) - 1.0f;
         m_lastMoveX = (outputs(1, 0) * 2.0f) - 1.0f;
         m_lastJump = outputs(2, 0) > 0.5f;
-        m_lastKick = outputs(3, 0) > 0.5f;
+        m_lastKick = outputs(3, 0) > 0.3f;
         m_lastTurnYaw = (outputs(4, 0) * 2.0f) - 1.0f;
         m_lastTurnPitch = (outputs(5, 0) * 2.0f) - 1.0f;
+
         assert(
             i == NUM_INPUTS &&
             "Number of generated input is different from size of the matrix!");
@@ -228,7 +241,7 @@ void EnemyController::onUpdate(float deltaTime)
             float alignment = glm::dot(kickDir, toEnemyGate);
 
             if (alignment > 0.0f)
-                onKickReward(alignment * 100.0f);
+                onKickReward(alignment * 300.0f);
         }
         else
         {

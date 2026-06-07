@@ -35,6 +35,7 @@ Entity &Scene::createEntity()
 }
 
 void Scene::draw() {}
+void Scene::drawUI() {}
 
 void Scene::addBehaviour(Behaviour *behaviour)
 {

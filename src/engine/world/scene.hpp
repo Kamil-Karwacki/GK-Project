@@ -8,19 +8,20 @@ class PhysicsSystem;
 
 class Scene
 {
-  public:
+public:
     Scene();
     virtual ~Scene();
     virtual void init();
     virtual void update(float deltaTime);
     virtual void fixedUpdate(float deltaTime);
     virtual void draw();
+    virtual void drawUI();
 
     Entity &createEntity();
 
     void addBehaviour(Behaviour *behaviour);
 
-  protected:
+protected:
     std::vector<std::unique_ptr<Entity>> m_entities;
     std::vector<Behaviour *> m_activeBehaviours;
 

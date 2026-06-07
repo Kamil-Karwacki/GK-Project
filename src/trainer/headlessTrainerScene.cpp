@@ -50,14 +50,14 @@ void HeadlessTrainerScene::generateArena(MatchArena &arena)
     auto onGoalA = [this, currentId]()
     {
         this->m_arenas[currentId].m_fitnessB += 1000.0f;
-        this->m_arenas[currentId].m_fitnessA -= 500.0f;
+        this->m_arenas[currentId].m_fitnessA -= 1000.0f;
         this->m_arenas[currentId].m_needsReset = true;
     };
 
     auto onGoalB = [this, currentId]()
     {
         this->m_arenas[currentId].m_fitnessA += 1000.0f;
-        this->m_arenas[currentId].m_fitnessB -= 500.0f;
+        this->m_arenas[currentId].m_fitnessB -= 1000.0f;
         this->m_arenas[currentId].m_needsReset = true;
     };
     auto gatesInfo = PitchGenerator::generateGates(arena.m_entities, this,
@@ -82,7 +82,7 @@ void HeadlessTrainerScene::generateArena(MatchArena &arena)
     player.GetComponent<Rigidbody>()->m_invInertiaTensor =
         Rigidbody::createSphereInverseInertiaTensor(1.0f, 2.0f);
     player.AddComponent<Footballer>();
-    NeuralAgent &neuralA = player.AddComponent<NeuralAgent>(38, 64, 6);
+    NeuralAgent &neuralA = player.AddComponent<NeuralAgent>(40, 64, 6);
 
     Entity &playerShootTrigger = arena.createEntity(this);
     playerShootTrigger.AddComponent<Transform>();
@@ -108,7 +108,8 @@ void HeadlessTrainerScene::generateArena(MatchArena &arena)
     // player B
     Entity &enemy = arena.createEntity(this);
     enemy.AddComponent<Transform>(arena.m_arenaOffset + glm::vec3(0, 10, -50),
-                                  glm::vec3(0), glm::vec3(1.5f));
+                                  glm::vec3(0, glm::radians(180.0f), 0)),
+        glm::vec3(1.5f);
 
     EnemyController &enemyB = enemy.AddComponent<EnemyController>();
     enemy.AddComponent<Rigidbody>(10.0f, 0.1f, 0.5f, 0.99f, 0.99f);
@@ -120,7 +121,7 @@ void HeadlessTrainerScene::generateArena(MatchArena &arena)
     enemy.GetComponent<Rigidbody>()->m_invInertiaTensor =
         Rigidbody::createSphereInverseInertiaTensor(1.0f, 2.0f);
     enemy.AddComponent<Footballer>();
-    NeuralAgent &neuralB = enemy.AddComponent<NeuralAgent>(38, 64, 6);
+    NeuralAgent &neuralB = enemy.AddComponent<NeuralAgent>(40, 64, 6);
 
     Entity &enemyShootTrigger = arena.createEntity(this);
     enemyShootTrigger.AddComponent<Transform>();
@@ -170,9 +171,19 @@ void HeadlessTrainerScene::generateArena(MatchArena &arena)
     enemyB.init(&player, &sphere, arena.m_gateBPos, arena.m_gateAPos);
 
     enemyA.onKickReward = [&arena](float reward)
-    { arena.m_fitnessA += reward; };
+    {
+        if (reward > 0.0f)
+            arena.m_fitnessA += reward;
+        else
+            arena.m_fitnessA -= 50.0f;
+    };
     enemyB.onKickReward = [&arena](float reward)
-    { arena.m_fitnessB += reward; };
+    {
+        if (reward > 0.0f)
+            arena.m_fitnessB += reward;
+        else
+            arena.m_fitnessB -= 50.0f;
+    };
 }
 
 void HeadlessTrainerScene::update(float deltaTime) { Scene::update(deltaTime); }
@@ -200,62 +211,51 @@ void HeadlessTrainerScene::fixedUpdate(float deltaTime)
         Transform *transB = arena.m_playerB->GetComponent<Transform>();
         Transform *ballTrans = arena.m_ball->GetComponent<Transform>();
 
-        Rigidbody *ballRb = arena.m_ball->GetComponent<Rigidbody>();
-
-        EnemyController *enemyA =
-            arena.m_playerA->GetComponent<EnemyController>();
-        EnemyController *enemyB =
-            arena.m_playerB->GetComponent<EnemyController>();
-
         glm::vec3 ballPos = ballTrans->getPosition();
         glm::vec3 agentAPos = transA->getPosition();
         glm::vec3 agentBPos = transB->getPosition();
 
-        float distABall = glm::distance(agentAPos, ballPos);
-        float distBBall = glm::distance(agentBPos, ballPos);
+        // --- Agent A ---
 
-        // Reward for pushing the ball closer to enemys gate
         float currBallToGateB = glm::distance(ballPos, arena.m_gateBPos);
-        float currBallToGateA = glm::distance(ballPos, arena.m_gateAPos);
-
-        float deltaA = arena.m_prevBallToGateB - currBallToGateB;
-        float deltaB = arena.m_prevBallToGateA - currBallToGateA;
-
-        if (deltaA > 0.0f)
-            arena.m_fitnessA += deltaA * 0.5f;
-        if (deltaB > 0.0f)
-            arena.m_fitnessB += deltaB * 0.5f;
-
+        float deltaBallA = arena.m_prevBallToGateB - currBallToGateB;
+        arena.m_fitnessA += deltaBallA * 4.0f;
         arena.m_prevBallToGateB = currBallToGateB;
+
+        float currAgentAToBall = glm::distance(agentAPos, ballPos);
+        float deltaAgentA = arena.m_prevAgentAToBall - currAgentAToBall;
+        arena.m_fitnessA += deltaAgentA * 0.5f;
+        arena.m_prevAgentAToBall = currAgentAToBall;
+
+        /*glm::vec3 agentAToBall = glm::normalize(ballPos - agentAPos);
+        glm::vec3 agentAToGateB = glm::normalize(arena.m_gateBPos - agentAPos);
+        float shootAlignA = glm::dot(agentAToBall, agentAToGateB);
+        if (shootAlignA > 0.7f)
+            arena.m_fitnessA += shootAlignA * 0.1f;*/
+
+        arena.m_fitnessA -= 0.01f;
+
+        // --- Agent B ---
+
+        float currBallToGateA = glm::distance(ballPos, arena.m_gateAPos);
+        float deltaBallB = arena.m_prevBallToGateA - currBallToGateA;
+        arena.m_fitnessB += deltaBallB * 4.0f;
         arena.m_prevBallToGateA = currBallToGateA;
 
-        // Reward for being behind the ball in line with the gaet
-        /*distABall = glm::distance(agentAPos, ballPos);
-        distBBall = glm::distance(agentBPos, ballPos);
+        float currAgentBToBall = glm::distance(agentBPos, ballPos);
+        float deltaAgentB = arena.m_prevAgentBToBall - currAgentBToBall;
+        arena.m_fitnessB += deltaAgentB * 0.5f;
+        arena.m_prevAgentBToBall = currAgentBToBall;
 
-        if (distABall > 0.5f && currBallToGateB > 0.5f)
-        {
-            glm::vec3 ballToGateB = glm::normalize(arena.m_gateBPos - ballPos);
-            glm::vec3 ballToAgentA = glm::normalize(agentAPos - ballPos);
-            float positioningA = glm::dot(ballToAgentA, ballToGateB); // -1..1
-            if (positioningA > 0.0f)
-                arena.m_fitnessA += positioningA * 0.015f;
-        }
+        /*glm::vec3 agentBToBall = glm::normalize(ballPos - agentBPos);
+        glm::vec3 agentBToGateA = glm::normalize(arena.m_gateAPos - agentBPos);
+        float shootAlignB = glm::dot(agentBToBall, agentBToGateA);
+        if (shootAlignB > 0.7f)
+            arena.m_fitnessB += shootAlignB * 0.1f;*/
 
-        if (distBBall > 0.5f && currBallToGateA > 0.5f)
-        {
-            glm::vec3 ballToGateA = glm::normalize(arena.m_gateAPos - ballPos);
-            glm::vec3 ballToAgentB = glm::normalize(agentBPos - ballPos);
-            float positioningB = glm::dot(ballToAgentB, ballToGateA); // -1..1
-            if (positioningB > 0.0f)
-                arena.m_fitnessB += positioningB * 0.015f;
-        }*/
+        arena.m_fitnessB -= 0.01f;
 
-        // Punishment for being too far from the ball
-        if (distABall > 70.0f)
-            arena.m_fitnessA -= 0.01f;
-        if (distBBall > 70.0f)
-            arena.m_fitnessB -= 0.01f;
+        // --- Reset ---
 
         if (arena.m_needsReset || arena.m_framesSinceLastReset > 1800)
         {

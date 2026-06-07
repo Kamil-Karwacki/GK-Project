@@ -5,7 +5,7 @@
 
 class EnemyController : public Behaviour
 {
-  public:
+public:
     Entity *m_opponent;
     Entity *m_ball;
 
@@ -23,8 +23,8 @@ class EnemyController : public Behaviour
     void init(Entity *opponent, Entity *ball, glm::vec3 ownGatePos,
               glm::vec3 enemyGatePos);
 
-  private:
-    Matrix m_inputMatrix{38, 1};
+private:
+    Matrix m_inputMatrix{40, 1};
     int m_frameCounter = 0;
     const int m_frameSkip = 4;
 
