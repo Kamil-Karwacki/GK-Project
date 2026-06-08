@@ -15,7 +15,7 @@ int main()
                      GLFW_CURSOR_DISABLED);
 
     bool isVisualMode = true;
-    const double FIXED_DT = 1.0 / 600.0;
+    const double FIXED_DT = 1.0 / 60.0;
     uint32_t frameCount = 0;
     static const uint32_t FRAMES_PER_GENERATION = 1800;
 

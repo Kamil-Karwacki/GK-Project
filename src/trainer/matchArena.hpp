@@ -34,4 +34,11 @@ struct MatchArena
     void resetPositions();
 
     void fixedUpdate(float deltaTime);
+
+    void onGoalA();
+    void onGoalB();
+    void onKickA(float reward);
+    void onKickB(float reward);
+    void updateFitness();
+    void step(float deltaTime, float gravity = 42.0f);
 };

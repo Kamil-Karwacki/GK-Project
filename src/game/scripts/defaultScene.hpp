@@ -5,6 +5,7 @@ class DefaultScene : public BaseScene
 {
 public:
     using BaseScene::BaseScene;
+    ~DefaultScene() override;
     void init() override;
     void update(float deltaTime) override;
     void fixedUpdate(float deltaTime) override;
@@ -18,4 +19,15 @@ public:
 
     glm::vec3 m_playerGatePos;
     glm::vec3 m_enemyGatePos;
+
+    void resetPositions();
+
+    Entity *m_player = nullptr;
+    Entity *m_enemy = nullptr;
+    Entity *m_ball = nullptr;
+
+private:
+    unsigned int m_skyboxVAO = 0;
+    unsigned int m_skyboxVBO = 0;
 };
+

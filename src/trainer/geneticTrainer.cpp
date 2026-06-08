@@ -59,13 +59,32 @@ void GeneticTrainer::evolvePopulation(std::vector<MatchArena> &arenas)
     std::cout << "Average score of top 10 agents: " << (top10Sum / 10.0f)
               << "\n\n";
 
-    std::vector<NeuralAgent> nextGeneration;
+    struct Brain
+    {
+        Matrix w1;
+        Matrix b1;
+        Matrix w2;
+        Matrix b2;
+
+        Brain(uint32_t inputs, uint32_t hidden, uint32_t outputs)
+            : w1(hidden, inputs), b1(hidden, 1),
+              w2(outputs, hidden), b2(outputs, 1)
+        {
+        }
+    };
+
+    std::vector<Brain> nextGeneration;
     nextGeneration.reserve(allAgents.size());
 
     //  Elitism - best agents aren't affected
     for (uint16_t i = 0; i < m_elitismCount && i < allAgents.size(); ++i)
     {
-        nextGeneration.push_back(*allAgents[i]);
+        Brain b(allAgents[i]->m_w1.m_cols, allAgents[i]->m_w1.m_rows, allAgents[i]->m_w2.m_rows);
+        b.w1 = allAgents[i]->m_w1;
+        b.b1 = allAgents[i]->m_b1;
+        b.w2 = allAgents[i]->m_w2;
+        b.b2 = allAgents[i]->m_b2;
+        nextGeneration.push_back(std::move(b));
     }
 
     // Crossover + mutation
@@ -74,31 +93,32 @@ void GeneticTrainer::evolvePopulation(std::vector<MatchArena> &arenas)
         NeuralAgent *parentA = tournamentSelect(allAgents, m_tournamentSize);
         NeuralAgent *parentB = tournamentSelect(allAgents, m_tournamentSize);
 
-        NeuralAgent child(parentA->m_w1.m_cols, parentA->m_w1.m_rows,
-                          parentA->m_w2.m_rows);
+        Brain child(parentA->m_w1.m_cols, parentA->m_w1.m_rows, parentA->m_w2.m_rows);
 
         // Crossing entire neurons instead of singular weights
         // so that network get full strategies/behaviours
         // instead of partial chagnes
-        crossoverMatrix(parentA->m_w1, parentB->m_w1, child.m_w1);
-        crossoverMatrix(parentA->m_b1, parentB->m_b1, child.m_b1);
-        crossoverMatrix(parentA->m_w2, parentB->m_w2, child.m_w2);
-        crossoverMatrix(parentA->m_b2, parentB->m_b2, child.m_b2);
+        crossoverMatrix(parentA->m_w1, parentB->m_w1, child.w1);
+        crossoverMatrix(parentA->m_b1, parentB->m_b1, child.b1);
+        crossoverMatrix(parentA->m_w2, parentB->m_w2, child.w2);
+        crossoverMatrix(parentA->m_b2, parentB->m_b2, child.b2);
 
-        mutateMatrix(child.m_w1);
-        mutateMatrix(child.m_b1);
-        mutateMatrix(child.m_w2);
-        mutateMatrix(child.m_b2);
+        mutateMatrix(child.w1);
+        mutateMatrix(child.b1);
+        mutateMatrix(child.w2);
+        mutateMatrix(child.b2);
 
         nextGeneration.push_back(std::move(child));
     }
 
+    std::shuffle(nextGeneration.begin(), nextGeneration.end(), m_rng);
+
     for (size_t i = 0; i < allAgents.size(); ++i)
     {
-        allAgents[i]->m_w1 = nextGeneration[i].m_w1;
-        allAgents[i]->m_b1 = nextGeneration[i].m_b1;
-        allAgents[i]->m_w2 = nextGeneration[i].m_w2;
-        allAgents[i]->m_b2 = nextGeneration[i].m_b2;
+        allAgents[i]->m_w1 = nextGeneration[i].w1;
+        allAgents[i]->m_b1 = nextGeneration[i].b1;
+        allAgents[i]->m_w2 = nextGeneration[i].w2;
+        allAgents[i]->m_b2 = nextGeneration[i].b2;
         allAgents[i]->m_fitness = 0.0f;
     }
 

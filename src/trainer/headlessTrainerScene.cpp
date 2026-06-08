@@ -47,19 +47,8 @@ void HeadlessTrainerScene::generateArena(MatchArena &arena)
 
     uint32_t currentId = arena.m_arenaID;
 
-    auto onGoalA = [this, currentId]()
-    {
-        this->m_arenas[currentId].m_fitnessB += 1000.0f;
-        this->m_arenas[currentId].m_fitnessA -= 1000.0f;
-        this->m_arenas[currentId].m_needsReset = true;
-    };
-
-    auto onGoalB = [this, currentId]()
-    {
-        this->m_arenas[currentId].m_fitnessA += 1000.0f;
-        this->m_arenas[currentId].m_fitnessB -= 1000.0f;
-        this->m_arenas[currentId].m_needsReset = true;
-    };
+    auto onGoalA = [this, currentId]() { this->m_arenas[currentId].onGoalA(); };
+    auto onGoalB = [this, currentId]() { this->m_arenas[currentId].onGoalB(); };
     auto gatesInfo = PitchGenerator::generateGates(arena.m_entities, this,
                                                    arena.m_arenaOffset, nullptr,
                                                    onGoalA, onGoalB, config);
@@ -108,8 +97,8 @@ void HeadlessTrainerScene::generateArena(MatchArena &arena)
     // player B
     Entity &enemy = arena.createEntity(this);
     enemy.AddComponent<Transform>(arena.m_arenaOffset + glm::vec3(0, 10, -50),
-                                  glm::vec3(0, glm::radians(180.0f), 0)),
-        glm::vec3(1.5f);
+                                  glm::vec3(0, glm::radians(180.0f), 0),
+                                  glm::vec3(1.5f));
 
     EnemyController &enemyB = enemy.AddComponent<EnemyController>();
     enemy.AddComponent<Rigidbody>(10.0f, 0.1f, 0.5f, 0.99f, 0.99f);
@@ -170,20 +159,8 @@ void HeadlessTrainerScene::generateArena(MatchArena &arena)
     enemyA.init(&enemy, &sphere, arena.m_gateAPos, arena.m_gateBPos);
     enemyB.init(&player, &sphere, arena.m_gateBPos, arena.m_gateAPos);
 
-    enemyA.onKickReward = [&arena](float reward)
-    {
-        if (reward > 0.0f)
-            arena.m_fitnessA += reward;
-        else
-            arena.m_fitnessA -= 50.0f;
-    };
-    enemyB.onKickReward = [&arena](float reward)
-    {
-        if (reward > 0.0f)
-            arena.m_fitnessB += reward;
-        else
-            arena.m_fitnessB -= 50.0f;
-    };
+    enemyA.onKickReward = [this, currentId](float reward) { this->m_arenas[currentId].onKickA(reward); };
+    enemyB.onKickReward = [this, currentId](float reward) { this->m_arenas[currentId].onKickB(reward); };
 }
 
 void HeadlessTrainerScene::update(float deltaTime) { Scene::update(deltaTime); }
@@ -195,71 +172,6 @@ void HeadlessTrainerScene::fixedUpdate(float deltaTime)
 #pragma omp parallel for
     for (auto &arena : m_arenas)
     {
-        for (auto &entity : arena.m_entities)
-        {
-            Rigidbody *rb = entity->GetComponent<Rigidbody>();
-            if (rb)
-            {
-                rb->m_forceAcc += glm::vec3(0.0f, -1.0f, 0.0f) * gravity *
-                                  (1.0f / rb->m_inverseMass);
-            }
-        }
-        arena.fixedUpdate(deltaTime);
-        arena.m_framesSinceLastReset++;
-
-        Transform *transA = arena.m_playerA->GetComponent<Transform>();
-        Transform *transB = arena.m_playerB->GetComponent<Transform>();
-        Transform *ballTrans = arena.m_ball->GetComponent<Transform>();
-
-        glm::vec3 ballPos = ballTrans->getPosition();
-        glm::vec3 agentAPos = transA->getPosition();
-        glm::vec3 agentBPos = transB->getPosition();
-
-        // --- Agent A ---
-
-        float currBallToGateB = glm::distance(ballPos, arena.m_gateBPos);
-        float deltaBallA = arena.m_prevBallToGateB - currBallToGateB;
-        arena.m_fitnessA += deltaBallA * 4.0f;
-        arena.m_prevBallToGateB = currBallToGateB;
-
-        float currAgentAToBall = glm::distance(agentAPos, ballPos);
-        float deltaAgentA = arena.m_prevAgentAToBall - currAgentAToBall;
-        arena.m_fitnessA += deltaAgentA * 0.5f;
-        arena.m_prevAgentAToBall = currAgentAToBall;
-
-        glm::vec3 agentAToBall = glm::normalize(ballPos - agentAPos);
-        glm::vec3 agentAToGateB = glm::normalize(arena.m_gateBPos - agentAPos);
-        float shootAlignA = glm::dot(agentAToBall, agentAToGateB);
-        if (shootAlignA > 0.7f)
-            arena.m_fitnessA += shootAlignA * 0.1f;
-
-        arena.m_fitnessA -= 0.01f;
-
-        // --- Agent B ---
-
-        float currBallToGateA = glm::distance(ballPos, arena.m_gateAPos);
-        float deltaBallB = arena.m_prevBallToGateA - currBallToGateA;
-        arena.m_fitnessB += deltaBallB * 4.0f;
-        arena.m_prevBallToGateA = currBallToGateA;
-
-        float currAgentBToBall = glm::distance(agentBPos, ballPos);
-        float deltaAgentB = arena.m_prevAgentBToBall - currAgentBToBall;
-        arena.m_fitnessB += deltaAgentB * 0.5f;
-        arena.m_prevAgentBToBall = currAgentBToBall;
-
-        glm::vec3 agentBToBall = glm::normalize(ballPos - agentBPos);
-        glm::vec3 agentBToGateA = glm::normalize(arena.m_gateAPos - agentBPos);
-        float shootAlignB = glm::dot(agentBToBall, agentBToGateA);
-        if (shootAlignB > 0.7f)
-            arena.m_fitnessB += shootAlignB * 0.1f;
-
-        arena.m_fitnessB -= 0.01f;
-
-        // --- Reset ---
-
-        if (arena.m_needsReset || arena.m_framesSinceLastReset > 1800)
-        {
-            arena.resetPositions();
-        }
+        arena.step(deltaTime, gravity);
     }
 }

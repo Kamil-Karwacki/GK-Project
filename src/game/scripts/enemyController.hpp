@@ -14,6 +14,7 @@ public:
 
     float m_yaw = 0.0f;
     float m_pitch = 0.0f;
+    float m_initialYaw = 0.0f;
 
     std::function<void(float)> onKickReward;
 

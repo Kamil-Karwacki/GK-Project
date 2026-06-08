@@ -1,5 +1,6 @@
 #pragma once
 #include <glm/glm.hpp>
+#include <functional>
 
 #include "scripts/ball.hpp"
 #include "world/behaviour.hpp"
@@ -17,6 +18,7 @@ class Footballer : public Behaviour
     bool m_jump = false;
     float m_groundTimer = 0.1f;
     Ball *m_ball = nullptr;
+    std::function<void(bool, glm::vec3)> m_onKickCallback;
 
     float m_speed = 30.0f;
     float m_jumpHeight = 1550.0f;

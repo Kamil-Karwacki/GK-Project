@@ -11,7 +11,6 @@
 #include "graphics/shader.hpp"
 #include "input.hpp"
 #include "window.hpp"
-#include "world/entity.hpp"
 
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
@@ -40,6 +39,8 @@ Application::Application() : m_isRunning(true)
                "assets/shaders/light.frag");
     loadShader("lineDebug", "assets/shaders/lineDebug.vert",
                "assets/shaders/lineDebug.frag");
+    loadShader("skybox", "assets/shaders/skybox.vert",
+               "assets/shaders/skybox.frag");
     Debug::init();
 
     glEnable(GL_DEPTH_TEST);
@@ -78,9 +79,6 @@ Application::~Application() { glfwTerminate(); }
 
 void Application::run()
 {
-    glfwSetInputMode(m_window->getNativeWindow(), GLFW_CURSOR,
-                     GLFW_CURSOR_DISABLED);
-
     Shader *debugShader = getShader("lineDebug");
 
     double accumulator = 0.0;
@@ -88,6 +86,24 @@ void Application::run()
 
     while (m_isRunning)
     {
+        if (m_nextScene)
+        {
+            m_activeScene = std::move(m_nextScene);
+            if (m_activeScene)
+            {
+                m_activeScene->init();
+            }
+            m_lastFrameTime = glfwGetTime();
+            accumulator = 0.0;
+        }
+
+        if (!m_activeScene)
+        {
+            m_inputManager->update();
+            glfwPollEvents();
+            continue;
+        }
+
         double currentFrameTime = glfwGetTime();
         double deltaTime = currentFrameTime - m_lastFrameTime;
         m_lastFrameTime = currentFrameTime;
@@ -158,7 +174,14 @@ Shader *Application::getShader(const std::string &name)
 
 void Application::loadScene(std::unique_ptr<BaseScene> scene)
 {
-    m_activeScene = std::move(scene);
-    if (m_activeScene)
-        m_activeScene->init();
+    if (!m_activeScene)
+    {
+        m_activeScene = std::move(scene);
+        if (m_activeScene)
+            m_activeScene->init();
+    }
+    else
+    {
+        m_nextScene = std::move(scene);
+    }
 }

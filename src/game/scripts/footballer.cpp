@@ -29,7 +29,11 @@ void Footballer::kickLoop()
     if (m_kickTimer > 0)
         return;
     if (!m_ball)
+    {
+        if (m_onKickCallback)
+            m_onKickCallback(false, glm::vec3(0.0f));
         return;
+    }
     Rigidbody *ballRb = m_ball->m_entity->GetComponent<Rigidbody>();
     if (!ballRb)
         return;
@@ -48,11 +52,16 @@ void Footballer::kickLoop()
     static constexpr float maxKickDistance = 6.0f;
     if (distToBall > maxKickDistance)
     {
+        if (m_onKickCallback)
+            m_onKickCallback(false, glm::vec3(0.0f));
         m_ball = nullptr;
         return;
     }
     float kickModifier = 8.0f / pow(distToBall, 1.5f);
     ballRb->m_forceAcc -= m_kickStrength * kickDir * kickModifier;
+
+    if (m_onKickCallback)
+        m_onKickCallback(true, kickDir);
 
     m_ball = nullptr;
     m_kickTimer = 0.5f;

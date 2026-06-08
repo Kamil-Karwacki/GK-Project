@@ -1,6 +1,10 @@
 #include "defaultScene.hpp"
 
+#include <glad/glad.h>
+#include <GLFW/glfw3.h>
 #include <memory>
+
+#include "menuScene.hpp"
 
 #include "ai/neuralAgent.hpp"
 #include "cameraController.hpp"
@@ -27,11 +31,25 @@
 #include "world/entity.hpp"
 #include "world/scene.hpp"
 
+DefaultScene::~DefaultScene()
+{
+    if (m_skyboxVAO != 0)
+    {
+        glDeleteVertexArrays(1, &m_skyboxVAO);
+    }
+    if (m_skyboxVBO != 0)
+    {
+        glDeleteBuffers(1, &m_skyboxVBO);
+    }
+}
+
 void DefaultScene::init()
 {
     generateTerrain();
 
     Application &app = Application::Get();
+    glfwSetInputMode(app.m_window->getNativeWindow(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
     Shader *defaultShader = app.getShader("default");
 
     Entity &player = createEntity();
@@ -94,7 +112,8 @@ void DefaultScene::init()
     player.GetComponent<Footballer>()->m_shoe = &playerShoe;
 
     Entity &enemy = createEntity();
-    enemy.AddComponent<Transform>(glm::vec3(0, 10, -50), glm::vec3(0),
+    enemy.AddComponent<Transform>(glm::vec3(0, 10, -50),
+                                  glm::vec3(0, glm::radians(180.0f), 0),
                                   glm::vec3(1.5f));
     EnemyController &enemyController = enemy.AddComponent<EnemyController>();
     NeuralAgent &agent = enemy.AddComponent<NeuralAgent>(40, 64, 6);
@@ -162,10 +181,86 @@ void DefaultScene::init()
                                        0.4f);
 
     enemyController.init(&player, &sphere, m_enemyGatePos, m_playerGatePos);
+
+    float skyboxVertices[] = {
+        -1.0f,  1.0f, -1.0f,
+        -1.0f, -1.0f, -1.0f,
+         1.0f, -1.0f, -1.0f,
+         1.0f, -1.0f, -1.0f,
+         1.0f,  1.0f, -1.0f,
+        -1.0f,  1.0f, -1.0f,
+
+        -1.0f, -1.0f,  1.0f,
+        -1.0f, -1.0f, -1.0f,
+        -1.0f,  1.0f, -1.0f,
+        -1.0f,  1.0f, -1.0f,
+        -1.0f,  1.0f,  1.0f,
+        -1.0f, -1.0f,  1.0f,
+
+         1.0f, -1.0f, -1.0f,
+         1.0f, -1.0f,  1.0f,
+         1.0f,  1.0f,  1.0f,
+         1.0f,  1.0f,  1.0f,
+         1.0f,  1.0f, -1.0f,
+         1.0f, -1.0f, -1.0f,
+
+        -1.0f, -1.0f,  1.0f,
+        -1.0f,  1.0f,  1.0f,
+         1.0f,  1.0f,  1.0f,
+         1.0f,  1.0f,  1.0f,
+         1.0f, -1.0f,  1.0f,
+        -1.0f, -1.0f,  1.0f,
+
+        -1.0f,  1.0f, -1.0f,
+         1.0f,  1.0f, -1.0f,
+         1.0f,  1.0f,  1.0f,
+         1.0f,  1.0f,  1.0f,
+        -1.0f,  1.0f,  1.0f,
+        -1.0f,  1.0f, -1.0f,
+
+        -1.0f, -1.0f, -1.0f,
+        -1.0f, -1.0f,  1.0f,
+         1.0f, -1.0f, -1.0f,
+         1.0f, -1.0f, -1.0f,
+        -1.0f, -1.0f,  1.0f,
+         1.0f, -1.0f,  1.0f
+    };
+
+    glGenVertexArrays(1, &m_skyboxVAO);
+    glGenBuffers(1, &m_skyboxVBO);
+    glBindVertexArray(m_skyboxVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, m_skyboxVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), &skyboxVertices, GL_STATIC_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glBindVertexArray(0);
+
+    m_player = &player;
+    m_enemy = &enemy;
+    m_ball = &sphere;
+
     std::cout << "Scene initialized successfully\n";
 }
 
-void DefaultScene::update(float deltaTime) { Scene::update(deltaTime); }
+void DefaultScene::update(float deltaTime)
+{
+    Scene::update(deltaTime);
+
+    m_matchTimer -= deltaTime;
+    if (m_matchTimer < 0.0f)
+    {
+        m_matchTimer = 0.0f;
+        Application &app = Application::Get();
+        app.loadScene(std::make_unique<MenuScene>(app.getWhiteTexture()));
+        return;
+    }
+
+    Application &app = Application::Get();
+    if (app.GetInput().isKeyPressed(GLFW_KEY_ESCAPE))
+    {
+        app.loadScene(std::make_unique<MenuScene>(app.getWhiteTexture()));
+    }
+}
 
 void DefaultScene::fixedUpdate(float deltaTime)
 {
@@ -182,7 +277,48 @@ void DefaultScene::fixedUpdate(float deltaTime)
     Scene::fixedUpdate(deltaTime);
 }
 
-void DefaultScene::draw() { BaseScene::draw(); }
+void DefaultScene::draw()
+{
+    BaseScene::draw();
+
+    Application &app = Application::Get();
+    Shader *skyboxShader = app.getShader("skybox");
+    if (skyboxShader && m_skyboxVAO != 0)
+    {
+        skyboxShader->use();
+        
+        glm::mat4 projection = getMainProjectionMatrix();
+        glm::mat4 view = getMainViewMatrix();
+        skyboxShader->setMat4("projection", 1, GL_FALSE, &projection[0][0]);
+        skyboxShader->setMat4("view", 1, GL_FALSE, &view[0][0]);
+
+        glm::vec3 sunDir(0.0f, 1.0f, 0.0f);
+        for (const auto &entity : m_entities)
+        {
+            DirectionalLight *light = entity->GetComponent<DirectionalLight>();
+            if (light)
+            {
+                Transform *transform = entity->GetComponent<Transform>();
+                if (transform)
+                {
+                    sunDir = -transform->getFront();
+                    break;
+                }
+            }
+        }
+        skyboxShader->setVec3("u_sunDir", sunDir);
+
+        glDepthMask(GL_FALSE);
+        glDepthFunc(GL_LEQUAL);
+        
+        glBindVertexArray(m_skyboxVAO);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+        glBindVertexArray(0);
+        
+        glDepthMask(GL_TRUE);
+        glDepthFunc(GL_LESS);
+    }
+}
 
 void DefaultScene::drawUI()
 {
@@ -249,9 +385,20 @@ void DefaultScene::generateTerrain()
     PitchGenerator::generatePitch(m_entities, this, glm::vec3(0.0f),
                                   defaultShader, config);
 
+    auto onGoalA = [this]() {
+        m_enemyScore++;
+        std::cout << "GOAL for ENEMY! Score is: " << m_playerScore << " - " << m_enemyScore << "\n";
+        this->resetPositions();
+    };
+    auto onGoalB = [this]() {
+        m_playerScore++;
+        std::cout << "GOAL for PLAYER! Score is: " << m_playerScore << " - " << m_enemyScore << "\n";
+        this->resetPositions();
+    };
+
     auto gatesInfo =
         PitchGenerator::generateGates(m_entities, this, glm::vec3(0.0f),
-                                      defaultShader, nullptr, nullptr, config);
+                                      defaultShader, onGoalA, onGoalB, config);
 
     m_playerGatePos = gatesInfo.gateAPos;
     m_enemyGatePos = gatesInfo.gateBPos;
@@ -302,5 +449,29 @@ void DefaultScene::generateTerrain()
             glm::vec3(0, glm::radians(90.0f), 0),
             glm::vec3(tribuneScale.x, 1, 1));
         tribuneB.AddComponent<MeshRenderer>(tribuneModel, defaultShader);
+    }
+}
+
+void DefaultScene::resetPositions()
+{
+    if (m_player)
+    {
+        m_player->GetComponent<Transform>()->setPosition(glm::vec3(0, 2, 50));
+        m_player->GetComponent<Transform>()->setRotation(glm::vec3(0.0f));
+        m_player->GetComponent<Rigidbody>()->m_velocity = glm::vec3(0);
+        m_player->GetComponent<Rigidbody>()->m_angularVelocity = glm::vec3(0);
+    }
+    if (m_enemy)
+    {
+        m_enemy->GetComponent<Transform>()->setPosition(glm::vec3(0, 2, -50));
+        m_enemy->GetComponent<Transform>()->setRotation(glm::vec3(0.0f, glm::radians(180.0f), 0.0f));
+        m_enemy->GetComponent<Rigidbody>()->m_velocity = glm::vec3(0);
+        m_enemy->GetComponent<Rigidbody>()->m_angularVelocity = glm::vec3(0);
+    }
+    if (m_ball)
+    {
+        m_ball->GetComponent<Transform>()->setPosition(glm::vec3(0, 5, 0));
+        m_ball->GetComponent<Rigidbody>()->m_velocity = glm::vec3(0);
+        m_ball->GetComponent<Rigidbody>()->m_angularVelocity = glm::vec3(0);
     }
 }

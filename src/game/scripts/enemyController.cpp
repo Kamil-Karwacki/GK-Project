@@ -13,7 +13,12 @@ void EnemyController::onStart()
 {
     Transform *transform = m_entity->GetComponent<Transform>();
     if (!transform)
+    {
         std::cerr << "Error: EnemyController requires transform component!\n";
+        return;
+    }
+    m_initialYaw = -transform->getEulerAngles().y;
+    m_yaw = m_initialYaw;
 }
 
 void EnemyController::init(Entity *opponent, Entity *ball, glm::vec3 ownGatePos,
@@ -23,6 +28,28 @@ void EnemyController::init(Entity *opponent, Entity *ball, glm::vec3 ownGatePos,
     m_ball = ball;
     m_ownGatePos = ownGatePos;
     m_enemyGatePos = enemyGatePos;
+
+    Footballer *footballer = m_entity->GetComponent<Footballer>();
+    if (footballer)
+    {
+        footballer->m_onKickCallback = [this](bool success, glm::vec3 kickDir) {
+            if (onKickReward)
+            {
+                if (success)
+                {
+                    glm::vec3 toEnemyGate = glm::normalize(
+                        m_enemyGatePos -
+                        m_ball->GetComponent<Transform>()->getPosition());
+                    float alignment = glm::dot(kickDir, toEnemyGate);
+                    onKickReward(alignment * 300.0f);
+                }
+                else
+                {
+                    onKickReward(-50.0f);
+                }
+            }
+        };
+    }
 }
 
 void EnemyController::onUpdate(float deltaTime)
@@ -188,35 +215,14 @@ void EnemyController::onUpdate(float deltaTime)
 
     if (m_lastKick)
     {
-        if (onKickReward)
-        {
-            glm::vec3 toEnemyGate = glm::normalize(
-                m_enemyGatePos -
-                m_ball->GetComponent<Transform>()->getPosition());
-            footballer->kickBall();
-
-            glm::vec3 ballVel = m_ball->GetComponent<Rigidbody>()->m_velocity;
-            glm::vec3 kickDir = glm::vec3(0.0f);
-            if (glm::length(ballVel) > 0.0001f)
-            {
-                kickDir = glm::normalize(ballVel);
-            }
-            float alignment = glm::dot(kickDir, toEnemyGate);
-
-            if (alignment > 0.0f)
-                onKickReward(alignment * 300.0f);
-        }
-        else
-        {
-            footballer->kickBall();
-        }
+        footballer->kickBall();
         m_lastKick = false;
     }
 
     float yawRange = glm::radians(180.0f);
     float pitchRange = glm::radians(25.0f);
 
-    m_yaw = -m_lastTurnYaw * yawRange;
+    m_yaw = m_initialYaw - m_lastTurnYaw * yawRange;
     m_pitch = -m_lastTurnPitch * pitchRange;
 
     footballer->m_rotation = glm::vec2(m_pitch, m_yaw);

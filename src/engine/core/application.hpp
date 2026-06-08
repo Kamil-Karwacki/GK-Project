@@ -43,4 +43,5 @@ class Application
 
     unsigned int whiteTexture;
     std::unordered_map<std::string, std::unique_ptr<Shader>> m_shaders;
+    std::unique_ptr<BaseScene> m_nextScene;
 };

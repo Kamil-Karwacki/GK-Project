@@ -105,6 +105,7 @@ add_library(HeadSoccerCore STATIC
     src/engine/world/components/transform.cpp
     src/game/scripts/playerController.cpp
     src/game/scripts/defaultScene.cpp
+    src/game/scripts/menuScene.cpp
     src/game/scripts/cameraController.cpp
     src/game/scripts/footballer.cpp
     src/game/scripts/ball.cpp
