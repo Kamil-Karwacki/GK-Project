@@ -64,5 +64,5 @@ void PlayerController::onUpdate(float deltaTime)
     if (m_pitch < -0.45f)
         m_pitch = -0.45f;
 
-    footballer->m_rotation = glm::vec2(m_pitch, m_yaw);
+    footballer->m_rotation = glm::vec2(-m_pitch, m_yaw);
 }

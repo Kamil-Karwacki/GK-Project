@@ -1,6 +1,7 @@
 #include "footballer.hpp"
 
 #include "glm/geometric.hpp"
+#include "scripts/shoeController.hpp"
 #include "world/components/rigidbody.hpp"
 #include "world/components/transform.hpp"
 #include "world/entity.hpp"
@@ -19,6 +20,12 @@ void Footballer::kickLoop()
     if (!m_shouldKick)
         return;
     m_shouldKick = false;
+
+    ShoeController *shoe = nullptr;
+    if (m_shoe)
+        shoe = m_shoe->GetComponent<ShoeController>();
+    if (shoe)
+        shoe->m_isKicking = true;
     if (m_kickTimer > 0)
         return;
     if (!m_ball)
@@ -45,7 +52,8 @@ void Footballer::kickLoop()
         return;
     }
     float kickModifier = 8.0f / pow(distToBall, 1.5f);
-    ballRb->m_forceAcc += m_kickStrength * kickDir * kickModifier;
+    ballRb->m_forceAcc -= m_kickStrength * kickDir * kickModifier;
+
     m_ball = nullptr;
     m_kickTimer = 0.5f;
 }
@@ -65,7 +73,7 @@ void Footballer::move(float deltaTime)
 
     transform->setRotation(glm::vec3(-m_rotation.x, -m_rotation.y, 0.0f));
 
-    glm::vec3 targetVel = -glm::cross(front, up) * m_speed * m_input.x -
+    glm::vec3 targetVel = glm::cross(front, up) * m_speed * m_input.x +
                           front * m_speed * m_input.y;
 
     static constexpr float accelerationRate = 12.0f;

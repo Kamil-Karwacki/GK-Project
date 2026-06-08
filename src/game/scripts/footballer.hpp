@@ -21,6 +21,7 @@ class Footballer : public Behaviour
     float m_speed = 30.0f;
     float m_jumpHeight = 1550.0f;
     float m_kickStrength = 5000.0f;
+    Entity *m_shoe = nullptr;
 
   private:
     void kickLoop();

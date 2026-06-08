@@ -1,23 +1,21 @@
 #include "enemyController.hpp"
-
-#include <cassert>
-#include <cstdint>
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-
 #include "scripts/ai/neuralAgent.hpp"
 #include "scripts/footballer.hpp"
 #include "world/components/rigidbody.hpp"
 #include "world/components/transform.hpp"
 #include "world/entity.hpp"
+#include <cassert>
+#include <cstdint>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 
 void EnemyController::onStart()
 {
     Transform *transform = m_entity->GetComponent<Transform>();
-
     if (!transform)
         std::cerr << "Error: EnemyController requires transform component!\n";
 }
+
 void EnemyController::init(Entity *opponent, Entity *ball, glm::vec3 ownGatePos,
                            glm::vec3 enemyGatePos)
 {
@@ -29,27 +27,6 @@ void EnemyController::init(Entity *opponent, Entity *ball, glm::vec3 ownGatePos,
 
 void EnemyController::onUpdate(float deltaTime)
 {
-    // ai agent inputs:
-    // agent forward vector
-    // agent velocity dir vector
-    // agent velocity value
-    // enemy relative position dir vector
-    // enemy distance
-    // enemy velocity dir
-    // enemy velocity value
-    // enemy forward vector
-    // ball relative position dir vector
-    // ball distance
-    // ball velocity dir
-    // vall velocity value
-    // vector from agent to its own gate dir
-    // vector from agent to its own gate value
-    // vector from agent to opponent's gate dir
-    // vector from agent to opponent's gate value
-    // agents normalized speed parameter
-    // agents normalized jump parameter
-    // agents normalized kick parameter
-    // is agent grounded
     Footballer *footballer = m_entity->GetComponent<Footballer>();
     NeuralAgent *agent = m_entity->GetComponent<NeuralAgent>();
     if (!footballer || !agent)
@@ -78,14 +55,12 @@ void EnemyController::onUpdate(float deltaTime)
 
         glm::vec3 forward = playerTrans->getFront();
         glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
-        glm::vec3 right = glm::normalize(glm::cross(forward, up));
+        glm::vec3 right = glm::normalize(glm::cross(up, forward));
 
-        // 1. Player Forward
         m_inputMatrix(i++, 0) = forward.x;
         m_inputMatrix(i++, 0) = forward.y;
         m_inputMatrix(i++, 0) = forward.z;
 
-        // 2 & 3. Player Velocity Dir & Value
         glm::vec3 playerVel = playerRb->m_velocity;
         glm::vec3 playerDirVel = glm::vec3(0.0f);
         float playerSpeed = glm::length(playerVel);
@@ -97,7 +72,6 @@ void EnemyController::onUpdate(float deltaTime)
         m_inputMatrix(i++, 0) = glm::dot(playerDirVel, forward);
         m_inputMatrix(i++, 0) = playerSpeed / (playerSpeed + AVG_SPEED);
 
-        // 4 & 5. Enemy Position Dir & Distance
         glm::vec3 enemyRelPos =
             enemyTrans->getPosition() - playerTrans->getPosition();
         glm::vec3 enemyRelPosDir = glm::vec3(0.0f);
@@ -110,7 +84,6 @@ void EnemyController::onUpdate(float deltaTime)
         m_inputMatrix(i++, 0) = glm::dot(enemyRelPosDir, forward);
         m_inputMatrix(i++, 0) = distToEnemy / (1.0f + distToEnemy);
 
-        // 6 & 7. Enemy Velocity Dir & Value
         glm::vec3 enemyVel = opponentRb->m_velocity;
         glm::vec3 enemyDirVel = glm::vec3(0.0f);
         float enemySpeed = glm::length(enemyVel);
@@ -122,13 +95,11 @@ void EnemyController::onUpdate(float deltaTime)
         m_inputMatrix(i++, 0) = glm::dot(enemyDirVel, forward);
         m_inputMatrix(i++, 0) = enemySpeed / (enemySpeed + AVG_SPEED);
 
-        // 8. Enemy Forward
         glm::vec3 enemyForward = enemyTrans->getFront();
         m_inputMatrix(i++, 0) = glm::dot(enemyForward, right);
         m_inputMatrix(i++, 0) = glm::dot(enemyForward, up);
         m_inputMatrix(i++, 0) = glm::dot(enemyForward, forward);
 
-        // 9 & 10. Ball Relative Pos Dir & Distance
         glm::vec3 ballRelPos =
             ballTrans->getPosition() - playerTrans->getPosition();
         glm::vec3 ballRelPosDir = glm::vec3(0.0f);
@@ -141,7 +112,6 @@ void EnemyController::onUpdate(float deltaTime)
         m_inputMatrix(i++, 0) = glm::dot(ballRelPosDir, forward);
         m_inputMatrix(i++, 0) = distToBall / (1.0f + distToBall);
 
-        // 11 & 12. Ball Velocity Dir & Value
         glm::vec3 ballVel = ballRb->m_velocity;
         glm::vec3 ballDirVel = glm::vec3(0.0f);
         float ballSpeed = glm::length(ballVel);
@@ -153,7 +123,6 @@ void EnemyController::onUpdate(float deltaTime)
         m_inputMatrix(i++, 0) = glm::dot(ballDirVel, forward);
         m_inputMatrix(i++, 0) = ballSpeed / (ballSpeed + BALL_CONST);
 
-        // 13 & 14. Own Gate Relative Pos Dir & Distance
         glm::vec3 ownGateRelPos = m_ownGatePos - playerTrans->getPosition();
         glm::vec3 ownGateRelPosDir = glm::vec3(0.0f);
         float distToOwnGate = glm::length(ownGateRelPos);
@@ -165,7 +134,6 @@ void EnemyController::onUpdate(float deltaTime)
         m_inputMatrix(i++, 0) = glm::dot(ownGateRelPosDir, forward);
         m_inputMatrix(i++, 0) = distToOwnGate / (1.0f + distToOwnGate);
 
-        // 15 & 16. Enemy Gate Relative Pos Dir & Distance
         glm::vec3 enemyGateRelPos = m_enemyGatePos - playerTrans->getPosition();
         glm::vec3 enemyGateRelPosDir = glm::vec3(0.0f);
         float distToEnemyGate = glm::length(enemyGateRelPos);
@@ -177,7 +145,6 @@ void EnemyController::onUpdate(float deltaTime)
         m_inputMatrix(i++, 0) = glm::dot(enemyGateRelPosDir, forward);
         m_inputMatrix(i++, 0) = distToEnemyGate / (1.0f + distToEnemyGate);
 
-        // 17, 18, 19, 20. Parameters & Grounded
         float normSpeed = footballer->m_speed / MAX_SPEED;
         float normJump = footballer->m_jumpHeight / MAX_JUMP;
         float normKick = footballer->m_kickStrength / MAX_KICK;
@@ -204,7 +171,7 @@ void EnemyController::onUpdate(float deltaTime)
         m_lastMoveY = (outputs(0, 0) * 2.0f) - 1.0f;
         m_lastMoveX = (outputs(1, 0) * 2.0f) - 1.0f;
         m_lastJump = outputs(2, 0) > 0.5f;
-        m_lastKick = outputs(3, 0) > 0.3f;
+        m_lastKick = outputs(3, 0) > 0.5f;
         m_lastTurnYaw = (outputs(4, 0) * 2.0f) - 1.0f;
         m_lastTurnPitch = (outputs(5, 0) * 2.0f) - 1.0f;
 
@@ -213,13 +180,9 @@ void EnemyController::onUpdate(float deltaTime)
             "Number of generated input is different from size of the matrix!");
     }
 
-    // Forward / Backward
     footballer->m_input.y = m_lastMoveY;
-
-    // Left / Right
     footballer->m_input.x = m_lastMoveX;
 
-    // Jump
     if (m_lastJump)
         footballer->m_jump = true;
 
@@ -247,18 +210,14 @@ void EnemyController::onUpdate(float deltaTime)
         {
             footballer->kickBall();
         }
-
         m_lastKick = false;
     }
 
-    float turnSpeed = 2.5f;
-    m_yaw += m_lastTurnYaw * turnSpeed * deltaTime;
-    m_pitch += m_lastTurnPitch * turnSpeed * deltaTime;
+    float yawRange = glm::radians(180.0f);
+    float pitchRange = glm::radians(25.0f);
 
-    if (m_pitch > 0.45f)
-        m_pitch = 0.45f;
-    if (m_pitch < -0.45f)
-        m_pitch = -0.45f;
+    m_yaw = -m_lastTurnYaw * yawRange;
+    m_pitch = -m_lastTurnPitch * pitchRange;
 
     footballer->m_rotation = glm::vec2(m_pitch, m_yaw);
 }

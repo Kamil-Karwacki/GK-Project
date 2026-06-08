@@ -18,6 +18,7 @@
 #include "scripts/footballerShootTrigger.hpp"
 #include "scripts/pitchGenerator.hpp"
 #include "scripts/playerGrounded.hpp"
+#include "scripts/shoeController.hpp"
 #include "world/components/collider.hpp"
 #include "world/components/light.hpp"
 #include "world/components/meshRenderer.hpp"
@@ -34,14 +35,20 @@ void DefaultScene::init()
     Shader *defaultShader = app.getShader("default");
 
     Entity &player = createEntity();
-    player.AddComponent<Transform>(glm::vec3(0, 20, 0), glm::vec3(0),
+    player.AddComponent<Transform>(glm::vec3(0, 10, 50), glm::vec3(0),
                                    glm::vec3(1.5f));
 
     std::shared_ptr<Model> playerModel =
         std::make_shared<Model>("assets/models/sphere.obj");
 
+    std::shared_ptr<Model> enemyModel =
+        std::make_shared<Model>("assets/models/redBall.obj");
+
     std::shared_ptr<Model> ballModel =
         std::make_shared<Model>("assets/models/ball.obj");
+
+    std::shared_ptr<Model> shoeModel =
+        std::make_shared<Model>("assets/models/shoe.obj");
 
     player.AddComponent<PlayerController>();
     player.AddComponent<MeshRenderer>(playerModel, defaultShader);
@@ -58,7 +65,7 @@ void DefaultScene::init()
     playerShootTrigger.AddComponent<Transform>();
     playerShootTrigger.AddComponent<FootballerShootTrigger>(&player);
     glm::mat4 offset = glm::mat4(1.0f);
-    offset = glm::translate(offset, glm::vec3(0, 0, 3.6f));
+    offset = glm::translate(offset, glm::vec3(0, 0, -3.6f));
     SphereCollider &playerBallCol =
         playerShootTrigger.AddComponentAs<Collider, SphereCollider>(
             1.1f, offset, true);
@@ -80,13 +87,19 @@ void DefaultScene::init()
     m_mainCamera = &cameraPlayer.AddComponent<Camera>();
     cameraPlayer.AddComponent<CameraController>(&player);
 
+    Entity &playerShoe = createEntity();
+    playerShoe.AddComponent<Transform>();
+    playerShoe.AddComponent<MeshRenderer>(shoeModel, defaultShader);
+    playerShoe.AddComponent<ShoeController>(glm::vec3(0, 0, 2), &player);
+    player.GetComponent<Footballer>()->m_shoe = &playerShoe;
+
     Entity &enemy = createEntity();
-    enemy.AddComponent<Transform>(glm::vec3(10, 10, 10), glm::vec3(0),
+    enemy.AddComponent<Transform>(glm::vec3(0, 10, -50), glm::vec3(0),
                                   glm::vec3(1.5f));
     EnemyController &enemyController = enemy.AddComponent<EnemyController>();
     NeuralAgent &agent = enemy.AddComponent<NeuralAgent>(40, 64, 6);
     agent.loadFromFile("best_brain.txt");
-    enemy.AddComponent<MeshRenderer>(playerModel, defaultShader);
+    enemy.AddComponent<MeshRenderer>(enemyModel, defaultShader);
     enemy.AddComponent<Rigidbody>(10.0f, 0.1f, 0.5f, 0.99f, 0.99f);
     SphereCollider &enemyCol =
         enemy.AddComponentAs<Collider, SphereCollider>(1.5f);
@@ -101,10 +114,10 @@ void DefaultScene::init()
     enemyShootTrigger.AddComponent<Transform>();
     enemyShootTrigger.AddComponent<FootballerShootTrigger>(&enemy);
     offset = glm::mat4(1.0f);
-    offset = glm::translate(offset, glm::vec3(0, 0, 3.6f));
+    offset = glm::translate(offset, glm::vec3(0, 0, -3.6f));
     SphereCollider &enemyBallCol =
-        playerShootTrigger.AddComponentAs<Collider, SphereCollider>(
-            1.1f, offset, true);
+        enemyShootTrigger.AddComponentAs<Collider, SphereCollider>(1.1f, offset,
+                                                                   true);
 
     enemyBallCol.m_layer = CAT_PLAYER;
     enemyBallCol.m_mask = CAT_BALL;
@@ -117,6 +130,12 @@ void DefaultScene::init()
     enemyGroundCol.m_layer = CAT_ENEMY;
     enemyGroundCol.m_mask = CAT_GROUND | CAT_BALL | CAT_PLAYER;
     enemyGrounded.AddComponent<PlayerGrounded>(&enemy, glm::vec3(0, -1.1f, 0));
+
+    Entity &enemyShoe = createEntity();
+    enemyShoe.AddComponent<Transform>();
+    enemyShoe.AddComponent<MeshRenderer>(shoeModel, defaultShader);
+    enemyShoe.AddComponent<ShoeController>(glm::vec3(0, 0, 2), &enemy);
+    enemy.GetComponent<Footballer>()->m_shoe = &enemyShoe;
 
     Entity &sphere = createEntity();
     sphere.AddComponent<Transform>();
@@ -150,14 +169,14 @@ void DefaultScene::update(float deltaTime) { Scene::update(deltaTime); }
 
 void DefaultScene::fixedUpdate(float deltaTime)
 {
-    static constexpr float gravity = 2500.0f;
+    static constexpr float gravity = 42.0f;
     for (auto &entity : m_entities)
     {
         Rigidbody *rb = entity->GetComponent<Rigidbody>();
         if (rb)
         {
             rb->m_forceAcc += glm::vec3(0.0f, -1.0f, 0.0f) * gravity *
-                              (1.0f / rb->m_inverseMass) * deltaTime;
+                              (1.0f / rb->m_inverseMass);
         }
     }
     Scene::fixedUpdate(deltaTime);

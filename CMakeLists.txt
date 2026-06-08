@@ -116,6 +116,7 @@ add_library(HeadSoccerCore STATIC
     src/game/scripts/ai/math.cpp
     src/game/scripts/ai/neuralAgent.cpp
     src/game/scripts/pitchGenerator.cpp
+    src/game/scripts/shoeController.cpp
     src/third_party/stb_implementation.cpp
     src/third_party/tinyobjloader_implementation.cpp
 )

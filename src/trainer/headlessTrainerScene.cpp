@@ -24,7 +24,7 @@
 
 void HeadlessTrainerScene::init()
 {
-    for (int i = 0; i < 200; i++)
+    for (int i = 0; i < 500; i++)
     {
         MatchArena arena(i);
         generateArena(arena);
@@ -88,7 +88,7 @@ void HeadlessTrainerScene::generateArena(MatchArena &arena)
     playerShootTrigger.AddComponent<Transform>();
     playerShootTrigger.AddComponent<FootballerShootTrigger>(&player);
     glm::mat4 offset = glm::mat4(1.0f);
-    offset = glm::translate(offset, glm::vec3(0, 0, 3.6f));
+    offset = glm::translate(offset, glm::vec3(0, 0, -3.6f));
     SphereCollider &playerBallCol =
         playerShootTrigger.AddComponentAs<Collider, SphereCollider>(
             1.1f, offset, true);
@@ -127,10 +127,10 @@ void HeadlessTrainerScene::generateArena(MatchArena &arena)
     enemyShootTrigger.AddComponent<Transform>();
     enemyShootTrigger.AddComponent<FootballerShootTrigger>(&enemy);
     offset = glm::mat4(1.0f);
-    offset = glm::translate(offset, glm::vec3(0, 0, 3.6f));
+    offset = glm::translate(offset, glm::vec3(0, 0, -3.6f));
     SphereCollider &enemyBallCol =
-        enemyShootTrigger.AddComponentAs<Collider, SphereCollider>(
-            1.1f, offset, true); // Poprawka nazwy
+        enemyShootTrigger.AddComponentAs<Collider, SphereCollider>(1.1f, offset,
+                                                                   true);
     enemyBallCol.m_layer = CAT_PLAYER;
     enemyBallCol.m_mask = CAT_BALL;
 
@@ -227,11 +227,11 @@ void HeadlessTrainerScene::fixedUpdate(float deltaTime)
         arena.m_fitnessA += deltaAgentA * 0.5f;
         arena.m_prevAgentAToBall = currAgentAToBall;
 
-        /*glm::vec3 agentAToBall = glm::normalize(ballPos - agentAPos);
+        glm::vec3 agentAToBall = glm::normalize(ballPos - agentAPos);
         glm::vec3 agentAToGateB = glm::normalize(arena.m_gateBPos - agentAPos);
         float shootAlignA = glm::dot(agentAToBall, agentAToGateB);
         if (shootAlignA > 0.7f)
-            arena.m_fitnessA += shootAlignA * 0.1f;*/
+            arena.m_fitnessA += shootAlignA * 0.1f;
 
         arena.m_fitnessA -= 0.01f;
 
@@ -247,11 +247,11 @@ void HeadlessTrainerScene::fixedUpdate(float deltaTime)
         arena.m_fitnessB += deltaAgentB * 0.5f;
         arena.m_prevAgentBToBall = currAgentBToBall;
 
-        /*glm::vec3 agentBToBall = glm::normalize(ballPos - agentBPos);
+        glm::vec3 agentBToBall = glm::normalize(ballPos - agentBPos);
         glm::vec3 agentBToGateA = glm::normalize(arena.m_gateAPos - agentBPos);
         float shootAlignB = glm::dot(agentBToBall, agentBToGateA);
         if (shootAlignB > 0.7f)
-            arena.m_fitnessB += shootAlignB * 0.1f;*/
+            arena.m_fitnessB += shootAlignB * 0.1f;
 
         arena.m_fitnessB -= 0.01f;
 

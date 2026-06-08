@@ -31,7 +31,7 @@
 
 void TrainerScene::init()
 {
-    for (int i = 0; i < 50; i++)
+    for (int i = 0; i < 10; i++)
     {
         MatchArena arena(i);
         generateArena(arena);
@@ -90,7 +90,7 @@ void TrainerScene::generateArena(MatchArena &arena)
     arena.m_gateBPos = gatesInfo.gateBPos;
 
     std::shared_ptr<Model> playerModel =
-        std::make_shared<Model>("assets/models/sphere.obj");
+        std::make_shared<Model>("assets/models/redBall.obj");
     std::shared_ptr<Model> ballModel =
         std::make_shared<Model>("assets/models/ball.obj");
     std::shared_ptr<Model> redBallModel =
@@ -99,7 +99,8 @@ void TrainerScene::generateArena(MatchArena &arena)
     // player A
     Entity &player = arena.createEntity(this);
     player.AddComponent<Transform>(arena.m_arenaOffset + glm::vec3(0, 10, 50),
-                                   glm::vec3(0), glm::vec3(1.5f));
+                                   glm::vec3(0, glm::radians(180.0f), 0),
+                                   glm::vec3(1.5f));
 
     EnemyController &enemyA = player.AddComponent<EnemyController>();
     player.AddComponent<MeshRenderer>(playerModel, defaultShader);
@@ -119,7 +120,7 @@ void TrainerScene::generateArena(MatchArena &arena)
     playerShootTrigger.AddComponent<Transform>();
     playerShootTrigger.AddComponent<FootballerShootTrigger>(&player);
     glm::mat4 offset = glm::mat4(1.0f);
-    offset = glm::translate(offset, glm::vec3(0, 0, 3.6f));
+    offset = glm::translate(offset, glm::vec3(0, 0, -3.6f));
     SphereCollider &playerBallCol =
         playerShootTrigger.AddComponentAs<Collider, SphereCollider>(
             1.1f, offset, true);
@@ -159,7 +160,7 @@ void TrainerScene::generateArena(MatchArena &arena)
     enemyShootTrigger.AddComponent<Transform>();
     enemyShootTrigger.AddComponent<FootballerShootTrigger>(&enemy);
     offset = glm::mat4(1.0f);
-    offset = glm::translate(offset, glm::vec3(0, 0, 3.6f));
+    offset = glm::translate(offset, glm::vec3(0, 0, -3.6f));
     SphereCollider &enemyBallCol =
         enemyShootTrigger.AddComponentAs<Collider, SphereCollider>(1.1f, offset,
                                                                    true);
