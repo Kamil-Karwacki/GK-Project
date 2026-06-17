@@ -5,10 +5,11 @@
 #include "world/components/transform.hpp"
 #include "world/entity.hpp"
 #include <cassert>
+#include <cmath>
 #include <cstdint>
 #include <glm/glm.hpp>
+#include <glm/gtc/constants.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-
 void EnemyController::onStart()
 {
     Transform *transform = m_entity->GetComponent<Transform>();
@@ -19,6 +20,7 @@ void EnemyController::onStart()
     }
     m_initialYaw = -transform->getEulerAngles().y;
     m_yaw = m_initialYaw;
+    m_maxDist = std::max(10.0f, glm::distance(m_ownGatePos, m_enemyGatePos));
 }
 
 void EnemyController::init(Entity *opponent, Entity *ball, glm::vec3 ownGatePos,
@@ -32,7 +34,8 @@ void EnemyController::init(Entity *opponent, Entity *ball, glm::vec3 ownGatePos,
     Footballer *footballer = m_entity->GetComponent<Footballer>();
     if (footballer)
     {
-        footballer->m_onKickCallback = [this](bool success, glm::vec3 kickDir) {
+        footballer->m_onKickCallback = [this](bool success, glm::vec3 kickDir)
+        {
             if (onKickReward)
             {
                 if (success)
@@ -73,20 +76,18 @@ void EnemyController::onUpdate(float deltaTime)
         Transform *enemyTrans = m_opponent->GetComponent<Transform>();
         Transform *ballTrans = m_ball->GetComponent<Transform>();
 
+        m_maxDist =
+            std::max(10.0f, glm::distance(m_ownGatePos, m_enemyGatePos));
+
         Rigidbody *playerRb = m_entity->GetComponent<Rigidbody>();
         Rigidbody *opponentRb = m_opponent->GetComponent<Rigidbody>();
         Rigidbody *ballRb = m_ball->GetComponent<Rigidbody>();
 
         uint16_t i = 0;
-        const int NUM_INPUTS = 40;
 
         glm::vec3 forward = playerTrans->getFront();
         glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
         glm::vec3 right = glm::normalize(glm::cross(up, forward));
-
-        m_inputMatrix(i++, 0) = forward.x;
-        m_inputMatrix(i++, 0) = forward.y;
-        m_inputMatrix(i++, 0) = forward.z;
 
         glm::vec3 playerVel = playerRb->m_velocity;
         glm::vec3 playerDirVel = glm::vec3(0.0f);
@@ -109,7 +110,7 @@ void EnemyController::onUpdate(float deltaTime)
         m_inputMatrix(i++, 0) = glm::dot(enemyRelPosDir, right);
         m_inputMatrix(i++, 0) = glm::dot(enemyRelPosDir, up);
         m_inputMatrix(i++, 0) = glm::dot(enemyRelPosDir, forward);
-        m_inputMatrix(i++, 0) = distToEnemy / (1.0f + distToEnemy);
+        m_inputMatrix(i++, 0) = std::min(1.0f, distToEnemy / m_maxDist);
 
         glm::vec3 enemyVel = opponentRb->m_velocity;
         glm::vec3 enemyDirVel = glm::vec3(0.0f);
@@ -137,7 +138,7 @@ void EnemyController::onUpdate(float deltaTime)
         m_inputMatrix(i++, 0) = glm::dot(ballRelPosDir, right);
         m_inputMatrix(i++, 0) = glm::dot(ballRelPosDir, up);
         m_inputMatrix(i++, 0) = glm::dot(ballRelPosDir, forward);
-        m_inputMatrix(i++, 0) = distToBall / (1.0f + distToBall);
+        m_inputMatrix(i++, 0) = std::min(1.0f, distToBall / m_maxDist);
 
         glm::vec3 ballVel = ballRb->m_velocity;
         glm::vec3 ballDirVel = glm::vec3(0.0f);
@@ -159,7 +160,7 @@ void EnemyController::onUpdate(float deltaTime)
         m_inputMatrix(i++, 0) = glm::dot(ownGateRelPosDir, right);
         m_inputMatrix(i++, 0) = glm::dot(ownGateRelPosDir, up);
         m_inputMatrix(i++, 0) = glm::dot(ownGateRelPosDir, forward);
-        m_inputMatrix(i++, 0) = distToOwnGate / (1.0f + distToOwnGate);
+        m_inputMatrix(i++, 0) = std::min(1.0f, distToOwnGate / m_maxDist);
 
         glm::vec3 enemyGateRelPos = m_enemyGatePos - playerTrans->getPosition();
         glm::vec3 enemyGateRelPosDir = glm::vec3(0.0f);
@@ -170,7 +171,7 @@ void EnemyController::onUpdate(float deltaTime)
         m_inputMatrix(i++, 0) = glm::dot(enemyGateRelPosDir, right);
         m_inputMatrix(i++, 0) = glm::dot(enemyGateRelPosDir, up);
         m_inputMatrix(i++, 0) = glm::dot(enemyGateRelPosDir, forward);
-        m_inputMatrix(i++, 0) = distToEnemyGate / (1.0f + distToEnemyGate);
+        m_inputMatrix(i++, 0) = std::min(1.0f, distToEnemyGate / m_maxDist);
 
         float normSpeed = footballer->m_speed / MAX_SPEED;
         float normJump = footballer->m_jumpHeight / MAX_JUMP;
@@ -193,14 +194,26 @@ void EnemyController::onUpdate(float deltaTime)
 
         m_inputMatrix(i++, 0) = glm::dot(predictedBallDir, right);
         m_inputMatrix(i++, 0) = glm::dot(predictedBallDir, forward);
+        m_inputMatrix(i++, 0) = glm::dot(predictedBallDir, up);
+
+        glm::vec3 ballToEnemyGate = m_enemyGatePos - ballTrans->getPosition();
+        glm::vec3 ballToEnemyGateDir = glm::normalize(ballToEnemyGate);
+        m_inputMatrix(i++, 0) = glm::dot(ballToEnemyGateDir, right);
+        m_inputMatrix(i++, 0) = glm::dot(ballToEnemyGateDir, up);
+        m_inputMatrix(i++, 0) = glm::dot(ballToEnemyGateDir, forward);
+
+        m_inputMatrix(i++, 0) = m_lastTurnPitch;
+        m_inputMatrix(i++, 0) = m_lastTurnYaw;
 
         Matrix outputs = agent->predict(m_inputMatrix);
-        m_lastMoveY = (outputs(0, 0) * 2.0f) - 1.0f;
-        m_lastMoveX = (outputs(1, 0) * 2.0f) - 1.0f;
-        m_lastJump = outputs(2, 0) > 0.5f;
-        m_lastKick = outputs(3, 0) > 0.5f;
-        m_lastTurnYaw = (outputs(4, 0) * 2.0f) - 1.0f;
-        m_lastTurnPitch = (outputs(5, 0) * 2.0f) - 1.0f;
+        m_lastMoveY = outputs(0, 0);
+        m_lastMoveX = outputs(1, 0);
+        m_lastJump = outputs(2, 0) > 0.0f;
+        m_lastKick = outputs(3, 0) > 0.0f;
+        m_lastTurnYaw = outputs(4, 0);
+        if (std::abs(m_lastTurnYaw) < 0.1f)
+            m_lastTurnYaw = 0.0f;
+        m_lastTurnPitch = outputs(5, 0);
 
         assert(
             i == NUM_INPUTS &&
@@ -219,11 +232,21 @@ void EnemyController::onUpdate(float deltaTime)
         m_lastKick = false;
     }
 
-    float yawRange = glm::radians(180.0f);
-    float pitchRange = glm::radians(25.0f);
+    static constexpr float TURN_SPEED_YAW = 10.0f;
+    static constexpr float TURN_SPEED_PITCH = 5.0f;
 
-    m_yaw = m_initialYaw - m_lastTurnYaw * yawRange;
-    m_pitch = -m_lastTurnPitch * pitchRange;
+    m_yaw += m_lastTurnYaw * TURN_SPEED_YAW * deltaTime;
+    m_pitch += m_lastTurnPitch * TURN_SPEED_PITCH * deltaTime;
+
+    if (m_pitch > 0.45f)
+        m_pitch = 0.45f;
+    if (m_pitch < -0.45f)
+        m_pitch = -0.45f;
+
+    while (m_yaw < -glm::pi<float>())
+        m_yaw += 2.0f * glm::pi<float>();
+    while (m_yaw > glm::pi<float>())
+        m_yaw -= 2.0f * glm::pi<float>();
 
     footballer->m_rotation = glm::vec2(m_pitch, m_yaw);
 }

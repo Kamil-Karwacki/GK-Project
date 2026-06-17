@@ -33,3 +33,4 @@ void Add(const Matrix &A, const Matrix &B, Matrix &out);
 double Sigmoid(double num);
 Matrix Sigmoid(const Matrix &m);
 void SigmoidInPlace(Matrix &m);
+void TanhInPlace(Matrix &m);

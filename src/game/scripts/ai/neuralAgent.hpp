@@ -3,29 +3,44 @@
 #include "world/behaviour.hpp"
 #include <cstdint>
 #include <string>
+#include <vector>
+
+struct Layer
+{
+    Matrix m_weights;
+    Matrix m_biases;
+
+    Layer(uint32_t out, uint32_t in) : m_weights(out, in), m_biases(out, 1)
+    {
+        m_weights.randomize();
+        m_biases.randomize();
+    }
+};
 
 class NeuralAgent : public Behaviour
 {
   public:
-    Matrix m_w1;
-    Matrix m_b1;
-    Matrix m_w2;
-    Matrix m_b2;
+    std::vector<Layer> m_layers;
 
     Matrix m_hidden;
     Matrix m_output;
 
     double m_fitness = 0.0;
 
-    NeuralAgent(uint32_t inputs, uint32_t hidden, uint32_t outputs)
-        : m_w1(hidden, inputs), m_b1(hidden, 1), m_w2(outputs, hidden),
-          m_b2(outputs, 1), m_hidden(hidden, 1), m_output(outputs, 1)
+    NeuralAgent(const std::vector<uint32_t> &layerSizes)
+        : m_hidden(1, 1), m_output(1, 1)
     {
-        m_w1.randomize();
-        m_b1.randomize();
-        m_w2.randomize();
-        m_b2.randomize();
+        for (size_t i = 1; i < layerSizes.size(); ++i)
+        {
+            m_layers.emplace_back(layerSizes[i], layerSizes[i - 1]);
+        }
     }
+
+    NeuralAgent(uint32_t inputs, uint32_t hidden, uint32_t outputs)
+        : NeuralAgent(std::vector<uint32_t>{inputs, hidden, outputs})
+    {
+    }
+
     virtual ~NeuralAgent() override = default;
 
     bool saveToFile(const std::string &filename) const;

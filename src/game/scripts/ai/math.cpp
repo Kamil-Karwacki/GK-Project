@@ -105,3 +105,11 @@ void SigmoidInPlace(Matrix &m)
         m.m_data[i] = 1.0 / (1.0 + std::exp(-m.m_data[i]));
     }
 }
+
+void TanhInPlace(Matrix &m)
+{
+    for (uint32_t i = 0; i < m.m_data.size(); ++i)
+    {
+        m.m_data[i] = std::tanh(m.m_data[i]);
+    }
+}

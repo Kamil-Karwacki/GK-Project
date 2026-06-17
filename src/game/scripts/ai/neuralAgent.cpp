@@ -5,13 +5,28 @@
 
 const Matrix NeuralAgent::predict(const Matrix &input)
 {
-    Multiply(m_w1, input, m_hidden);
-    Add(m_hidden, m_b1, m_hidden);
-    SigmoidInPlace(m_hidden);
+    if (m_layers.empty())
+    {
+        return input;
+    }
 
-    Multiply(m_w2, m_hidden, m_output);
-    Add(m_output, m_b2, m_output);
-    SigmoidInPlace(m_output);
+    Matrix *in_ptr = const_cast<Matrix *>(&input);
+    Matrix *out_ptr = &m_output;
+
+    for (size_t i = 0; i < m_layers.size(); ++i)
+    {
+        Multiply(m_layers[i].m_weights, *in_ptr, *out_ptr);
+        Add(*out_ptr, m_layers[i].m_biases, *out_ptr);
+        TanhInPlace(*out_ptr);
+
+        in_ptr = out_ptr;
+        out_ptr = (out_ptr == &m_output) ? &m_hidden : &m_output;
+    }
+
+    if (in_ptr != &m_output)
+    {
+        m_output = *in_ptr;
+    }
 
     return m_output;
 }
@@ -21,13 +36,12 @@ bool NeuralAgent::saveToFile(const std::string &filename) const
     std::ofstream file(filename);
     if (!file.is_open())
     {
-        std::cerr << "Couldn't open file to save neural agent: " << filename
-                  << "\n";
         return false;
     }
 
-    auto writeMatrix = [&file](const Matrix &m)
-    {
+    file << m_layers.size() << "\n";
+
+    auto writeMatrix = [&file](const Matrix &m) {
         file << m.m_rows << " " << m.m_cols << "\n";
         for (double val : m.m_data)
         {
@@ -36,12 +50,12 @@ bool NeuralAgent::saveToFile(const std::string &filename) const
         file << "\n";
     };
 
-    writeMatrix(m_w1);
-    writeMatrix(m_b1);
-    writeMatrix(m_w2);
-    writeMatrix(m_b2);
+    for (const auto &layer : m_layers)
+    {
+        writeMatrix(layer.m_weights);
+        writeMatrix(layer.m_biases);
+    }
 
-    file.close();
     return true;
 }
 
@@ -50,34 +64,36 @@ bool NeuralAgent::loadFromFile(const std::string &filename)
     std::ifstream file(filename);
     if (!file.is_open())
     {
-        std::cerr << "Failed to read file with weights: " << filename << "\n";
         return false;
     }
 
-    auto readMatrix = [&file](Matrix &m)
+    size_t numLayers;
+    if (!(file >> numLayers))
     {
+        return false;
+    }
+
+    m_layers.clear();
+
+    auto readMatrix = [&file](Matrix &m) {
         int rows, cols;
         file >> rows >> cols;
-
-        if (rows != m.m_rows || cols != m.m_cols)
-        {
-            std::cerr << "Error: Wrong matrix size in the file! Expected "
-                      << m.m_rows << "x" << m.m_cols << ". Received: " << rows
-                      << "x" << cols << "\n";
-            return;
-        }
-
+        m.m_rows = rows;
+        m.m_cols = cols;
+        m.m_data.resize(rows * cols);
         for (double &val : m.m_data)
         {
             file >> val;
         }
     };
 
-    readMatrix(m_w1);
-    readMatrix(m_b1);
-    readMatrix(m_w2);
-    readMatrix(m_b2);
+    for (size_t i = 0; i < numLayers; ++i)
+    {
+        Layer layer(1, 1);
+        readMatrix(layer.m_weights);
+        readMatrix(layer.m_biases);
+        m_layers.push_back(std::move(layer));
+    }
 
-    file.close();
     return true;
 }

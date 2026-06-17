@@ -1,6 +1,7 @@
 #include "defaultScene.hpp"
 
 #include <glad/glad.h>
+
 #include <GLFW/glfw3.h>
 #include <memory>
 
@@ -48,7 +49,8 @@ void DefaultScene::init()
     generateTerrain();
 
     Application &app = Application::Get();
-    glfwSetInputMode(app.m_window->getNativeWindow(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    glfwSetInputMode(app.m_window->getNativeWindow(), GLFW_CURSOR,
+                     GLFW_CURSOR_DISABLED);
 
     Shader *defaultShader = app.getShader("default");
 
@@ -57,10 +59,10 @@ void DefaultScene::init()
                                    glm::vec3(1.5f));
 
     std::shared_ptr<Model> playerModel =
-        std::make_shared<Model>("assets/models/sphere.obj");
+        std::make_shared<Model>("assets/models/footballer1.obj");
 
     std::shared_ptr<Model> enemyModel =
-        std::make_shared<Model>("assets/models/redBall.obj");
+        std::make_shared<Model>("assets/models/footballer2.obj");
 
     std::shared_ptr<Model> ballModel =
         std::make_shared<Model>("assets/models/ball.obj");
@@ -116,7 +118,7 @@ void DefaultScene::init()
                                   glm::vec3(0, glm::radians(180.0f), 0),
                                   glm::vec3(1.5f));
     EnemyController &enemyController = enemy.AddComponent<EnemyController>();
-    NeuralAgent &agent = enemy.AddComponent<NeuralAgent>(40, 64, 6);
+    NeuralAgent &agent = enemy.AddComponent<NeuralAgent>(43, 256, 6);
     agent.loadFromFile("best_brain.txt");
     enemy.AddComponent<MeshRenderer>(enemyModel, defaultShader);
     enemy.AddComponent<Rigidbody>(10.0f, 0.1f, 0.5f, 0.99f, 0.99f);
@@ -183,56 +185,33 @@ void DefaultScene::init()
     enemyController.init(&player, &sphere, m_enemyGatePos, m_playerGatePos);
 
     float skyboxVertices[] = {
-        -1.0f,  1.0f, -1.0f,
-        -1.0f, -1.0f, -1.0f,
-         1.0f, -1.0f, -1.0f,
-         1.0f, -1.0f, -1.0f,
-         1.0f,  1.0f, -1.0f,
-        -1.0f,  1.0f, -1.0f,
+        -1.0f, 1.0f,  -1.0f, -1.0f, -1.0f, -1.0f, 1.0f,  -1.0f, -1.0f,
+        1.0f,  -1.0f, -1.0f, 1.0f,  1.0f,  -1.0f, -1.0f, 1.0f,  -1.0f,
 
-        -1.0f, -1.0f,  1.0f,
-        -1.0f, -1.0f, -1.0f,
-        -1.0f,  1.0f, -1.0f,
-        -1.0f,  1.0f, -1.0f,
-        -1.0f,  1.0f,  1.0f,
-        -1.0f, -1.0f,  1.0f,
+        -1.0f, -1.0f, 1.0f,  -1.0f, -1.0f, -1.0f, -1.0f, 1.0f,  -1.0f,
+        -1.0f, 1.0f,  -1.0f, -1.0f, 1.0f,  1.0f,  -1.0f, -1.0f, 1.0f,
 
-         1.0f, -1.0f, -1.0f,
-         1.0f, -1.0f,  1.0f,
-         1.0f,  1.0f,  1.0f,
-         1.0f,  1.0f,  1.0f,
-         1.0f,  1.0f, -1.0f,
-         1.0f, -1.0f, -1.0f,
+        1.0f,  -1.0f, -1.0f, 1.0f,  -1.0f, 1.0f,  1.0f,  1.0f,  1.0f,
+        1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  -1.0f, 1.0f,  -1.0f, -1.0f,
 
-        -1.0f, -1.0f,  1.0f,
-        -1.0f,  1.0f,  1.0f,
-         1.0f,  1.0f,  1.0f,
-         1.0f,  1.0f,  1.0f,
-         1.0f, -1.0f,  1.0f,
-        -1.0f, -1.0f,  1.0f,
+        -1.0f, -1.0f, 1.0f,  -1.0f, 1.0f,  1.0f,  1.0f,  1.0f,  1.0f,
+        1.0f,  1.0f,  1.0f,  1.0f,  -1.0f, 1.0f,  -1.0f, -1.0f, 1.0f,
 
-        -1.0f,  1.0f, -1.0f,
-         1.0f,  1.0f, -1.0f,
-         1.0f,  1.0f,  1.0f,
-         1.0f,  1.0f,  1.0f,
-        -1.0f,  1.0f,  1.0f,
-        -1.0f,  1.0f, -1.0f,
+        -1.0f, 1.0f,  -1.0f, 1.0f,  1.0f,  -1.0f, 1.0f,  1.0f,  1.0f,
+        1.0f,  1.0f,  1.0f,  -1.0f, 1.0f,  1.0f,  -1.0f, 1.0f,  -1.0f,
 
-        -1.0f, -1.0f, -1.0f,
-        -1.0f, -1.0f,  1.0f,
-         1.0f, -1.0f, -1.0f,
-         1.0f, -1.0f, -1.0f,
-        -1.0f, -1.0f,  1.0f,
-         1.0f, -1.0f,  1.0f
-    };
+        -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, 1.0f,  1.0f,  -1.0f, -1.0f,
+        1.0f,  -1.0f, -1.0f, -1.0f, -1.0f, 1.0f,  1.0f,  -1.0f, 1.0f};
 
     glGenVertexArrays(1, &m_skyboxVAO);
     glGenBuffers(1, &m_skyboxVBO);
     glBindVertexArray(m_skyboxVAO);
     glBindBuffer(GL_ARRAY_BUFFER, m_skyboxVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), &skyboxVertices, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), &skyboxVertices,
+                 GL_STATIC_DRAW);
     glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float),
+                          (void *)0);
     glBindVertexArray(0);
 
     m_player = &player;
@@ -286,7 +265,7 @@ void DefaultScene::draw()
     if (skyboxShader && m_skyboxVAO != 0)
     {
         skyboxShader->use();
-        
+
         glm::mat4 projection = getMainProjectionMatrix();
         glm::mat4 view = getMainViewMatrix();
         skyboxShader->setMat4("projection", 1, GL_FALSE, &projection[0][0]);
@@ -310,11 +289,11 @@ void DefaultScene::draw()
 
         glDepthMask(GL_FALSE);
         glDepthFunc(GL_LEQUAL);
-        
+
         glBindVertexArray(m_skyboxVAO);
         glDrawArrays(GL_TRIANGLES, 0, 36);
         glBindVertexArray(0);
-        
+
         glDepthMask(GL_TRUE);
         glDepthFunc(GL_LESS);
     }
@@ -385,14 +364,18 @@ void DefaultScene::generateTerrain()
     PitchGenerator::generatePitch(m_entities, this, glm::vec3(0.0f),
                                   defaultShader, config);
 
-    auto onGoalA = [this]() {
+    auto onGoalA = [this]()
+    {
         m_enemyScore++;
-        std::cout << "GOAL for ENEMY! Score is: " << m_playerScore << " - " << m_enemyScore << "\n";
+        std::cout << "GOAL for ENEMY! Score is: " << m_playerScore << " - "
+                  << m_enemyScore << "\n";
         this->resetPositions();
     };
-    auto onGoalB = [this]() {
+    auto onGoalB = [this]()
+    {
         m_playerScore++;
-        std::cout << "GOAL for PLAYER! Score is: " << m_playerScore << " - " << m_enemyScore << "\n";
+        std::cout << "GOAL for PLAYER! Score is: " << m_playerScore << " - "
+                  << m_enemyScore << "\n";
         this->resetPositions();
     };
 
@@ -464,7 +447,8 @@ void DefaultScene::resetPositions()
     if (m_enemy)
     {
         m_enemy->GetComponent<Transform>()->setPosition(glm::vec3(0, 2, -50));
-        m_enemy->GetComponent<Transform>()->setRotation(glm::vec3(0.0f, glm::radians(180.0f), 0.0f));
+        m_enemy->GetComponent<Transform>()->setRotation(
+            glm::vec3(0.0f, glm::radians(180.0f), 0.0f));
         m_enemy->GetComponent<Rigidbody>()->m_velocity = glm::vec3(0);
         m_enemy->GetComponent<Rigidbody>()->m_angularVelocity = glm::vec3(0);
     }

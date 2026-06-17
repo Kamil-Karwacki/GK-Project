@@ -5,7 +5,7 @@
 
 class EnemyController : public Behaviour
 {
-public:
+  public:
     Entity *m_opponent;
     Entity *m_ball;
 
@@ -16,6 +16,8 @@ public:
     float m_pitch = 0.0f;
     float m_initialYaw = 0.0f;
 
+    float m_maxDist = 10.0f;
+
     std::function<void(float)> onKickReward;
 
     void onStart() override;
@@ -24,8 +26,8 @@ public:
     void init(Entity *opponent, Entity *ball, glm::vec3 ownGatePos,
               glm::vec3 enemyGatePos);
 
-private:
-    Matrix m_inputMatrix{40, 1};
+  private:
+    Matrix m_inputMatrix{43, 1};
     int m_frameCounter = 0;
     const int m_frameSkip = 4;
 

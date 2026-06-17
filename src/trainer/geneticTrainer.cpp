@@ -2,14 +2,9 @@
 #include "scripts/ai/neuralAgent.hpp"
 #include "world/entity.hpp"
 #include <algorithm>
+#include <cmath>
 #include <iostream>
 #include <vector>
-
-GeneticTrainer::GeneticTrainer()
-{
-    std::random_device rd;
-    m_rng = std::mt19937(rd());
-}
 
 NeuralAgent *
 GeneticTrainer::tournamentSelect(const std::vector<NeuralAgent *> &agents,
@@ -42,6 +37,24 @@ void GeneticTrainer::evolvePopulation(std::vector<MatchArena> &arenas)
         allAgents.push_back(agentB);
     }
 
+    for (size_t i = 0; i < allAgents.size(); ++i)
+    {
+        int similarCount = 0;
+        for (size_t j = 0; j < allAgents.size(); ++j)
+        {
+            if (i == j)
+                continue;
+            float diff = 0.0f;
+            const auto& biasesA = allAgents[i]->m_layers.back().m_biases;
+            const auto& biasesB = allAgents[j]->m_layers.back().m_biases;
+            for (size_t k = 0; k < biasesA.m_data.size(); ++k)
+                diff += std::abs(biasesA.m_data[k] - biasesB.m_data[k]);
+            if (diff < 0.5f)
+                similarCount++;
+        }
+        allAgents[i]->m_fitness -= similarCount * 5.0f;
+    }
+
     std::sort(allAgents.begin(), allAgents.end(),
               [](NeuralAgent *a, NeuralAgent *b)
               { return a->m_fitness > b->m_fitness; });
@@ -49,7 +62,12 @@ void GeneticTrainer::evolvePopulation(std::vector<MatchArena> &arenas)
     std::cout << "--- GENERATION " << m_generation << " FINISHED ---\n";
     std::cout << "Best fitness:  " << allAgents[0]->m_fitness << "\n";
     std::cout << "Worst fitness: " << allAgents.back()->m_fitness << "\n";
+    std::cout << "Mutation Rate: " << m_mutationRate << "\n";
+    std::cout << "Mutation Power:" << m_mutationPower << "\n";
     m_generation++;
+
+    m_mutationRate = std::max(m_minMutationRate, m_mutationRate * m_decayFactor);
+    m_mutationPower = std::max(m_minMutationPower, m_mutationPower * m_decayFactor);
 
     allAgents[0]->saveToFile("best_brain.txt");
 
@@ -59,32 +77,13 @@ void GeneticTrainer::evolvePopulation(std::vector<MatchArena> &arenas)
     std::cout << "Average score of top 10 agents: " << (top10Sum / 10.0f)
               << "\n\n";
 
-    struct Brain
-    {
-        Matrix w1;
-        Matrix b1;
-        Matrix w2;
-        Matrix b2;
-
-        Brain(uint32_t inputs, uint32_t hidden, uint32_t outputs)
-            : w1(hidden, inputs), b1(hidden, 1),
-              w2(outputs, hidden), b2(outputs, 1)
-        {
-        }
-    };
-
-    std::vector<Brain> nextGeneration;
+    std::vector<std::vector<Layer>> nextGeneration;
     nextGeneration.reserve(allAgents.size());
 
     //  Elitism - best agents aren't affected
     for (uint16_t i = 0; i < m_elitismCount && i < allAgents.size(); ++i)
     {
-        Brain b(allAgents[i]->m_w1.m_cols, allAgents[i]->m_w1.m_rows, allAgents[i]->m_w2.m_rows);
-        b.w1 = allAgents[i]->m_w1;
-        b.b1 = allAgents[i]->m_b1;
-        b.w2 = allAgents[i]->m_w2;
-        b.b2 = allAgents[i]->m_b2;
-        nextGeneration.push_back(std::move(b));
+        nextGeneration.push_back(allAgents[i]->m_layers);
     }
 
     // Crossover + mutation
@@ -93,32 +92,34 @@ void GeneticTrainer::evolvePopulation(std::vector<MatchArena> &arenas)
         NeuralAgent *parentA = tournamentSelect(allAgents, m_tournamentSize);
         NeuralAgent *parentB = tournamentSelect(allAgents, m_tournamentSize);
 
-        Brain child(parentA->m_w1.m_cols, parentA->m_w1.m_rows, parentA->m_w2.m_rows);
+        std::vector<Layer> childLayers;
+        childLayers.reserve(parentA->m_layers.size());
 
-        // Crossing entire neurons instead of singular weights
-        // so that network get full strategies/behaviours
-        // instead of partial chagnes
-        crossoverMatrix(parentA->m_w1, parentB->m_w1, child.w1);
-        crossoverMatrix(parentA->m_b1, parentB->m_b1, child.b1);
-        crossoverMatrix(parentA->m_w2, parentB->m_w2, child.w2);
-        crossoverMatrix(parentA->m_b2, parentB->m_b2, child.b2);
+        for (size_t L = 0; L < parentA->m_layers.size(); ++L)
+        {
+            // Create a child layer matching the dimensions of the parent layer
+            Layer childLayer(parentA->m_layers[L].m_weights.m_rows, parentA->m_layers[L].m_weights.m_cols);
+            
+            // Crossing entire neurons instead of singular weights
+            // so that network get full strategies/behaviours
+            // instead of partial changes
+            crossoverMatrix(parentA->m_layers[L].m_weights, parentB->m_layers[L].m_weights, childLayer.m_weights);
+            crossoverMatrix(parentA->m_layers[L].m_biases, parentB->m_layers[L].m_biases, childLayer.m_biases);
 
-        mutateMatrix(child.w1);
-        mutateMatrix(child.b1);
-        mutateMatrix(child.w2);
-        mutateMatrix(child.b2);
+            mutateMatrix(childLayer.m_weights);
+            mutateMatrix(childLayer.m_biases);
 
-        nextGeneration.push_back(std::move(child));
+            childLayers.push_back(std::move(childLayer));
+        }
+
+        nextGeneration.push_back(std::move(childLayers));
     }
 
     std::shuffle(nextGeneration.begin(), nextGeneration.end(), m_rng);
 
     for (size_t i = 0; i < allAgents.size(); ++i)
     {
-        allAgents[i]->m_w1 = nextGeneration[i].w1;
-        allAgents[i]->m_b1 = nextGeneration[i].b1;
-        allAgents[i]->m_w2 = nextGeneration[i].w2;
-        allAgents[i]->m_b2 = nextGeneration[i].b2;
+        allAgents[i]->m_layers = nextGeneration[i];
         allAgents[i]->m_fitness = 0.0f;
     }
 

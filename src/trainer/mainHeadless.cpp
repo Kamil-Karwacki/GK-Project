@@ -3,7 +3,7 @@
 #include "headlessTrainerScene.hpp"
 #include <iostream>
 
-int main()
+int main(int argc, char *argv[])
 {
     HeadlessApplication app;
 
@@ -15,7 +15,16 @@ int main()
     uint32_t frameCount = 0;
     static const uint32_t FRAMES_PER_GENERATION = 1800;
 
-    GeneticTrainer trainer;
+    float mutationRate = 0.05f;
+    float mutationPower = 0.2f;
+    uint16_t elitismCount = 30;
+    if (argc == 4)
+    {
+        mutationRate = std::stof(argv[1]);
+        mutationPower = std::stof(argv[2]);
+        elitismCount = std::stoi(argv[3]);
+    }
+    GeneticTrainer trainer(mutationRate, mutationPower, elitismCount);
 
     while (true)
     {

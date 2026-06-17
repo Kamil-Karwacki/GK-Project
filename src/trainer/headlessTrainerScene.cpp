@@ -24,7 +24,7 @@
 
 void HeadlessTrainerScene::init()
 {
-    for (int i = 0; i < 500; i++)
+    for (int i = 0; i < 300; i++)
     {
         MatchArena arena(i);
         generateArena(arena);
@@ -56,6 +56,8 @@ void HeadlessTrainerScene::generateArena(MatchArena &arena)
     arena.m_gateAPos = gatesInfo.gateAPos;
     arena.m_gateBPos = gatesInfo.gateBPos;
 
+    std::vector<uint32_t> layersSizes{43, 64, 64, 6};
+
     // player A
     Entity &player = arena.createEntity(this);
     player.AddComponent<Transform>(arena.m_arenaOffset + glm::vec3(0, 10, 50),
@@ -71,7 +73,7 @@ void HeadlessTrainerScene::generateArena(MatchArena &arena)
     player.GetComponent<Rigidbody>()->m_invInertiaTensor =
         Rigidbody::createSphereInverseInertiaTensor(1.0f, 2.0f);
     player.AddComponent<Footballer>();
-    NeuralAgent &neuralA = player.AddComponent<NeuralAgent>(40, 64, 6);
+    NeuralAgent &neuralA = player.AddComponent<NeuralAgent>(layersSizes);
 
     Entity &playerShootTrigger = arena.createEntity(this);
     playerShootTrigger.AddComponent<Transform>();
@@ -110,7 +112,7 @@ void HeadlessTrainerScene::generateArena(MatchArena &arena)
     enemy.GetComponent<Rigidbody>()->m_invInertiaTensor =
         Rigidbody::createSphereInverseInertiaTensor(1.0f, 2.0f);
     enemy.AddComponent<Footballer>();
-    NeuralAgent &neuralB = enemy.AddComponent<NeuralAgent>(40, 64, 6);
+    NeuralAgent &neuralB = enemy.AddComponent<NeuralAgent>(layersSizes);
 
     Entity &enemyShootTrigger = arena.createEntity(this);
     enemyShootTrigger.AddComponent<Transform>();
@@ -159,8 +161,10 @@ void HeadlessTrainerScene::generateArena(MatchArena &arena)
     enemyA.init(&enemy, &sphere, arena.m_gateAPos, arena.m_gateBPos);
     enemyB.init(&player, &sphere, arena.m_gateBPos, arena.m_gateAPos);
 
-    enemyA.onKickReward = [this, currentId](float reward) { this->m_arenas[currentId].onKickA(reward); };
-    enemyB.onKickReward = [this, currentId](float reward) { this->m_arenas[currentId].onKickB(reward); };
+    enemyA.onKickReward = [this, currentId](float reward)
+    { this->m_arenas[currentId].onKickA(reward); };
+    enemyB.onKickReward = [this, currentId](float reward)
+    { this->m_arenas[currentId].onKickB(reward); };
 }
 
 void HeadlessTrainerScene::update(float deltaTime) { Scene::update(deltaTime); }

@@ -102,7 +102,7 @@ void TrainerScene::generateArena(MatchArena &arena)
     player.GetComponent<Rigidbody>()->m_invInertiaTensor =
         Rigidbody::createSphereInverseInertiaTensor(1.0f, 2.0f);
     player.AddComponent<Footballer>();
-    NeuralAgent &neuralA = player.AddComponent<NeuralAgent>(40, 64, 6);
+    NeuralAgent &neuralA = player.AddComponent<NeuralAgent>(43, 256, 6);
     neuralA.loadFromFile("best_brain.txt");
 
     Entity &playerShootTrigger = arena.createEntity(this);
@@ -143,7 +143,7 @@ void TrainerScene::generateArena(MatchArena &arena)
     enemy.GetComponent<Rigidbody>()->m_invInertiaTensor =
         Rigidbody::createSphereInverseInertiaTensor(1.0f, 2.0f);
     enemy.AddComponent<Footballer>();
-    NeuralAgent &neuralB = enemy.AddComponent<NeuralAgent>(40, 64, 6);
+    NeuralAgent &neuralB = enemy.AddComponent<NeuralAgent>(43, 256, 6);
     neuralB.loadFromFile("best_brain.txt");
 
     Entity &enemyShootTrigger = arena.createEntity(this);
@@ -194,8 +194,10 @@ void TrainerScene::generateArena(MatchArena &arena)
     enemyA.init(&enemy, &sphere, arena.m_gateAPos, arena.m_gateBPos);
     enemyB.init(&player, &sphere, arena.m_gateBPos, arena.m_gateAPos);
 
-    enemyA.onKickReward = [this, currentId](float reward) { this->m_arenas[currentId].onKickA(reward); };
-    enemyB.onKickReward = [this, currentId](float reward) { this->m_arenas[currentId].onKickB(reward); };
+    enemyA.onKickReward = [this, currentId](float reward)
+    { this->m_arenas[currentId].onKickA(reward); };
+    enemyB.onKickReward = [this, currentId](float reward)
+    { this->m_arenas[currentId].onKickB(reward); };
 }
 
 void TrainerScene::update(float deltaTime) { Scene::update(deltaTime); }
