@@ -38,14 +38,18 @@ vec3 calculateDirLight()
     // ambient
     vec3 ambient = u_dirLight.ambient * u_dirLight.color;
 
-    // diffuse
-    float diff = max(dot(normal, lightDir), 0.0);
+    // toon diffuse
+    float diffIntensity = max(dot(normal, lightDir), 0.0);
+    float diff;
+    if (diffIntensity > 0.5)      diff = 1.0;
+    else if (diffIntensity > 0.1) diff = 0.6;
+    else                          diff = 0.3;
     vec3 diffuse = u_dirLight.diffuse * diff * u_dirLight.color;
 
-    // specular
+    // toon specular
     vec3 halfwayDir = normalize(lightDir + viewDir);
-    // 32 = shininess
-    float spec = pow(max(dot(normal, halfwayDir), 0.0), 2.0);
+    float specIntensity = max(dot(normal, halfwayDir), 0.0);
+    float spec = step(0.9, specIntensity); // sharp threshold
     vec3 specular = u_dirLight.specular * spec * u_dirLight.color;
 
     vec3 finalLight = ambient + diffuse + specular;
