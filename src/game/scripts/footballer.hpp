@@ -20,9 +20,13 @@ class Footballer : public Behaviour
     Ball *m_ball = nullptr;
     std::function<void(bool, glm::vec3)> m_onKickCallback;
 
-    float m_speed = 30.0f;
-    float m_jumpHeight = 1550.0f;
-    float m_kickStrength = 5000.0f;
+    static constexpr float BASE_SPEED = 30.0f;
+    static constexpr float BASE_JUMP_HEIGHT = 1550.0f;
+    static constexpr float BASE_KICK_STRENGTH = 5000.0f;
+
+    float m_speed = BASE_SPEED;
+    float m_jumpHeight = BASE_JUMP_HEIGHT;
+    float m_kickStrength = BASE_KICK_STRENGTH;
     Entity *m_shoe = nullptr;
 
   private:

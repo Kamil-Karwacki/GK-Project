@@ -60,6 +60,8 @@ void Footballer::kickLoop()
     float kickModifier = 8.0f / pow(distToBall, 1.5f);
     ballRb->m_forceAcc -= m_kickStrength * kickDir * kickModifier;
 
+    m_ball->setLastContactFootballer(this);
+
     if (m_onKickCallback)
         m_onKickCallback(true, kickDir);
 
