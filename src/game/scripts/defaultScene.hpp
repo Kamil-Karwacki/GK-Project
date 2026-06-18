@@ -3,7 +3,7 @@
 
 class DefaultScene : public BaseScene
 {
-public:
+  public:
     using BaseScene::BaseScene;
     ~DefaultScene() override;
     void init() override;
@@ -12,6 +12,7 @@ public:
     void draw() override;
     void drawUI() override;
     void generateTerrain();
+    void generatePowerups(Entity *cameraPlayer);
 
     uint16_t m_playerScore = 0;
     uint16_t m_enemyScore = 0;
@@ -26,8 +27,7 @@ public:
     Entity *m_enemy = nullptr;
     Entity *m_ball = nullptr;
 
-private:
+  private:
     unsigned int m_skyboxVAO = 0;
     unsigned int m_skyboxVBO = 0;
 };
-

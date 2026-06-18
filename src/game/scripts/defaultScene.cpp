@@ -23,6 +23,7 @@
 #include "scripts/footballerShootTrigger.hpp"
 #include "scripts/pitchGenerator.hpp"
 #include "scripts/playerGrounded.hpp"
+#include "scripts/powerup.hpp"
 #include "scripts/shoeController.hpp"
 #include "world/components/collider.hpp"
 #include "world/components/light.hpp"
@@ -217,6 +218,8 @@ void DefaultScene::init()
     m_player = &player;
     m_enemy = &enemy;
     m_ball = &sphere;
+
+    generatePowerups(&cameraPlayer);
 
     std::cout << "Scene initialized successfully\n";
 }
@@ -458,4 +461,111 @@ void DefaultScene::resetPositions()
         m_ball->GetComponent<Rigidbody>()->m_velocity = glm::vec3(0);
         m_ball->GetComponent<Rigidbody>()->m_angularVelocity = glm::vec3(0);
     }
+}
+
+void DefaultScene::generatePowerups(Entity *cameraPlayer)
+{
+    Application &app = Application::Get();
+    Shader *unlitShader = app.getShader("unlit");
+
+    std::shared_ptr<Model> highJumpPowerupModel =
+        std::make_shared<Model>("assets/models/highJumpPowerup.obj");
+
+    std::shared_ptr<Model> lowJumpPowerupModel =
+        std::make_shared<Model>("assets/models/lowJumpPowerup.obj");
+
+    std::shared_ptr<Model> strongShotPowerupModel =
+        std::make_shared<Model>("assets/models/strongShotPowerup.obj");
+
+    std::shared_ptr<Model> weakShotPowerupModel =
+        std::make_shared<Model>("assets/models/weakShotPowerup.obj");
+
+    std::shared_ptr<Model> highSpeedPowerupModel =
+        std::make_shared<Model>("assets/models/highSpeedPowerup.obj");
+
+    std::shared_ptr<Model> slowSpeedPowerupModel =
+        std::make_shared<Model>("assets/models/slowSpeedPowerup.obj");
+
+    float powerupScale = 3.2f;
+
+    // 1. Speed Boost Powerup
+    Entity &speedPowerup = createEntity();
+    speedPowerup.AddComponent<Transform>(glm::vec3(0, 3.0f, 0), glm::vec3(0),
+                                         glm::vec3(powerupScale));
+    speedPowerup.AddComponent<MeshRenderer>(highSpeedPowerupModel, unlitShader);
+    SphereCollider &speedCol =
+        speedPowerup.AddComponentAs<Collider, SphereCollider>(
+            powerupScale, glm::mat4(1.0f), true);
+    speedCol.m_layer = CAT_GROUND;
+    speedCol.m_mask = CAT_BALL;
+    speedPowerup.AddComponent<Powerup>(PowerupType::SpeedBoost, 5.0f, 8.0f)
+        .setTargetEntity(cameraPlayer);
+
+    // 2. Speed Debuff Powerup
+    Entity &slowPowerup = createEntity();
+    slowPowerup.AddComponent<Transform>(glm::vec3(0, 3.0f, 0), glm::vec3(0),
+                                        glm::vec3(2.5f));
+    slowPowerup.AddComponent<MeshRenderer>(slowSpeedPowerupModel, unlitShader);
+    SphereCollider &slowCol =
+        slowPowerup.AddComponentAs<Collider, SphereCollider>(
+            2.5f, glm::mat4(1.0f), true);
+    slowCol.m_layer = CAT_GROUND;
+    slowCol.m_mask = CAT_BALL;
+    slowPowerup.AddComponent<Powerup>(PowerupType::SpeedDebuff, 5.0f, 8.0f)
+        .setTargetEntity(cameraPlayer);
+
+    // 3. Super Kick Powerup
+    std::shared_ptr<Model> redBallModel =
+        std::make_shared<Model>("assets/models/redBall.obj");
+    Entity &kickPowerup = createEntity();
+    kickPowerup.AddComponent<Transform>(glm::vec3(0, 3.0f, 0), glm::vec3(0),
+                                        glm::vec3(2.5f));
+    kickPowerup.AddComponent<MeshRenderer>(strongShotPowerupModel, unlitShader);
+    SphereCollider &kickCol =
+        kickPowerup.AddComponentAs<Collider, SphereCollider>(
+            2.5f, glm::mat4(1.0f), true);
+    kickCol.m_layer = CAT_GROUND;
+    kickCol.m_mask = CAT_BALL;
+    kickPowerup.AddComponent<Powerup>(PowerupType::SuperKick, 5.0f, 8.0f)
+        .setTargetEntity(cameraPlayer);
+
+    // 4. Weak Kick Powerup
+    Entity &weakKickPowerup = createEntity();
+    weakKickPowerup.AddComponent<Transform>(glm::vec3(0, 3.0f, 0), glm::vec3(0),
+                                            glm::vec3(2.5f));
+    weakKickPowerup.AddComponent<MeshRenderer>(weakShotPowerupModel,
+                                               unlitShader);
+    SphereCollider &weakKickCol =
+        weakKickPowerup.AddComponentAs<Collider, SphereCollider>(
+            2.5f, glm::mat4(1.0f), true);
+    weakKickCol.m_layer = CAT_GROUND;
+    weakKickCol.m_mask = CAT_BALL;
+    weakKickPowerup.AddComponent<Powerup>(PowerupType::WeakKick, 5.0f, 8.0f)
+        .setTargetEntity(cameraPlayer);
+
+    // 5. Super Jump Powerup
+    Entity &jumpPowerup = createEntity();
+    jumpPowerup.AddComponent<Transform>(glm::vec3(0, 3.0f, 0), glm::vec3(0),
+                                        glm::vec3(2.5f));
+    jumpPowerup.AddComponent<MeshRenderer>(highJumpPowerupModel, unlitShader);
+    SphereCollider &jumpCol =
+        jumpPowerup.AddComponentAs<Collider, SphereCollider>(
+            2.5f, glm::mat4(1.0f), true);
+    jumpCol.m_layer = CAT_GROUND;
+    jumpCol.m_mask = CAT_BALL;
+    jumpPowerup.AddComponent<Powerup>(PowerupType::SuperJump, 5.0f, 8.0f)
+        .setTargetEntity(cameraPlayer);
+
+    // 6. Low Jump Powerup
+    Entity &lowJumpPowerup = createEntity();
+    lowJumpPowerup.AddComponent<Transform>(glm::vec3(0, 3.0f, 0), glm::vec3(0),
+                                           glm::vec3(2.5f));
+    lowJumpPowerup.AddComponent<MeshRenderer>(lowJumpPowerupModel, unlitShader);
+    SphereCollider &lowJumpCol =
+        lowJumpPowerup.AddComponentAs<Collider, SphereCollider>(
+            2.5f, glm::mat4(1.0f), true);
+    lowJumpCol.m_layer = CAT_GROUND;
+    lowJumpCol.m_mask = CAT_BALL;
+    lowJumpPowerup.AddComponent<Powerup>(PowerupType::LowJump, 5.0f, 8.0f)
+        .setTargetEntity(cameraPlayer);
 }

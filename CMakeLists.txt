@@ -118,6 +118,7 @@ add_library(HeadSoccerCore STATIC
     src/game/scripts/ai/neuralAgent.cpp
     src/game/scripts/pitchGenerator.cpp
     src/game/scripts/shoeController.cpp
+    src/game/scripts/powerup.cpp
     src/third_party/stb_implementation.cpp
     src/third_party/tinyobjloader_implementation.cpp
 )
@@ -187,6 +188,7 @@ add_library(HeadSoccerCoreHeadless STATIC
     src/game/scripts/footballerShootTrigger.cpp
     src/game/scripts/enemyController.cpp
     src/game/scripts/gateTrigger.cpp
+    src/game/scripts/powerup.cpp
     src/game/scripts/ai/math.cpp
     src/game/scripts/ai/neuralAgent.cpp
     src/game/scripts/pitchGenerator.cpp

@@ -35,6 +35,8 @@ Application::Application() : m_isRunning(true)
     m_inputManager->bindAction("jump", GLFW_KEY_SPACE);
     loadShader("default", "assets/shaders/default.vert",
                "assets/shaders/default.frag");
+    loadShader("unlit", "assets/shaders/default.vert",
+               "assets/shaders/unlit.frag");
     loadShader("light", "assets/shaders/light.vert",
                "assets/shaders/light.frag");
     loadShader("lineDebug", "assets/shaders/lineDebug.vert",
