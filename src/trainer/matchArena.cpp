@@ -3,7 +3,6 @@
 #include "world/components/rigidbody.hpp"
 #include "world/components/transform.hpp"
 #include "world/entity.hpp"
-#include <algorithm>
 
 MatchArena::MatchArena(int id) : m_arenaID(id)
 {
@@ -83,21 +82,9 @@ void MatchArena::onGoalB()
     m_needsReset = true;
 }
 
-void MatchArena::onKickA(float reward)
-{
-    if (reward > 0.0f)
-        m_fitnessA += reward;
-    else
-        m_fitnessA -= 50.0f;
-}
+void MatchArena::onKickA(float reward) { m_fitnessA += reward; }
 
-void MatchArena::onKickB(float reward)
-{
-    if (reward > 0.0f)
-        m_fitnessB += reward;
-    else
-        m_fitnessB -= 50.0f;
-}
+void MatchArena::onKickB(float reward) { m_fitnessB += reward; }
 
 void MatchArena::updateFitness()
 {

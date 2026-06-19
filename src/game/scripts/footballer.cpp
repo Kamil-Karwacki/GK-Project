@@ -6,6 +6,12 @@
 #include "world/components/transform.hpp"
 #include "world/entity.hpp"
 
+const CharacterDef CHARACTERS[3] = {
+    {"Speedster", "assets/models/footballer1.obj", Footballer::BASE_SPEED * 1.3f, Footballer::BASE_JUMP_HEIGHT, Footballer::BASE_KICK_STRENGTH * 0.8f},
+    {"Powerhouse", "assets/models/footballer2.obj", Footballer::BASE_SPEED * 0.8f, Footballer::BASE_JUMP_HEIGHT * 1.1f, Footballer::BASE_KICK_STRENGTH * 1.5f},
+    {"Balanced", "assets/models/model.obj", Footballer::BASE_SPEED, Footballer::BASE_JUMP_HEIGHT, Footballer::BASE_KICK_STRENGTH}
+};
+
 void Footballer::onUpdate(float deltaTime)
 {
     m_kickTimer -= deltaTime;
@@ -21,17 +27,20 @@ void Footballer::kickLoop()
         return;
     m_shouldKick = false;
 
+    if (m_kickTimer > 0)
+        return;
+
     ShoeController *shoe = nullptr;
     if (m_shoe)
         shoe = m_shoe->GetComponent<ShoeController>();
     if (shoe)
         shoe->m_isKicking = true;
-    if (m_kickTimer > 0)
-        return;
+
     if (!m_ball)
     {
         if (m_onKickCallback)
             m_onKickCallback(false, glm::vec3(0.0f));
+        m_kickTimer = 0.5f;
         return;
     }
     Rigidbody *ballRb = m_ball->m_entity->GetComponent<Rigidbody>();
@@ -55,6 +64,7 @@ void Footballer::kickLoop()
         if (m_onKickCallback)
             m_onKickCallback(false, glm::vec3(0.0f));
         m_ball = nullptr;
+        m_kickTimer = 0.5f;
         return;
     }
     float kickModifier = 8.0f / pow(distToBall, 1.5f);

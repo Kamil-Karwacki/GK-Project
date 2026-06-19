@@ -4,7 +4,7 @@
 class DefaultScene : public BaseScene
 {
   public:
-    using BaseScene::BaseScene;
+    DefaultScene(unsigned int whiteTextureId, int playerCharIdx = 0, int enemyCharIdx = 0);
     ~DefaultScene() override;
     void init() override;
     void update(float deltaTime) override;
@@ -30,4 +30,7 @@ class DefaultScene : public BaseScene
   private:
     unsigned int m_skyboxVAO = 0;
     unsigned int m_skyboxVBO = 0;
+
+    int m_playerCharIdx;
+    int m_enemyCharIdx;
 };

@@ -48,7 +48,7 @@ void EnemyController::init(Entity *opponent, Entity *ball, glm::vec3 ownGatePos,
                 }
                 else
                 {
-                    onKickReward(-50.0f);
+                    onKickReward(-5.0f);
                 }
             }
         };

@@ -33,6 +33,9 @@
 #include "world/entity.hpp"
 #include "world/scene.hpp"
 
+DefaultScene::DefaultScene(unsigned int whiteTextureId, int playerCharIdx, int enemyCharIdx)
+    : BaseScene(whiteTextureId), m_playerCharIdx(playerCharIdx), m_enemyCharIdx(enemyCharIdx) {}
+
 DefaultScene::~DefaultScene()
 {
     if (m_skyboxVAO != 0)
@@ -60,10 +63,10 @@ void DefaultScene::init()
                                    glm::vec3(1.5f));
 
     std::shared_ptr<Model> playerModel =
-        std::make_shared<Model>("assets/models/footballer1.obj");
+        std::make_shared<Model>(CHARACTERS[m_playerCharIdx].modelPath);
 
     std::shared_ptr<Model> enemyModel =
-        std::make_shared<Model>("assets/models/footballer2.obj");
+        std::make_shared<Model>(CHARACTERS[m_enemyCharIdx].modelPath);
 
     std::shared_ptr<Model> ballModel =
         std::make_shared<Model>("assets/models/ball.obj");
@@ -80,7 +83,10 @@ void DefaultScene::init()
     playerCol.m_mask = CAT_BALL | CAT_ENEMY | CAT_GROUND;
     player.GetComponent<Rigidbody>()->m_invInertiaTensor =
         Rigidbody::createSphereInverseInertiaTensor(1.0f, 2.0f);
-    player.AddComponent<Footballer>();
+    Footballer& playerFb = player.AddComponent<Footballer>();
+    playerFb.m_speed = CHARACTERS[m_playerCharIdx].speed;
+    playerFb.m_jumpHeight = CHARACTERS[m_playerCharIdx].jumpHeight;
+    playerFb.m_kickStrength = CHARACTERS[m_playerCharIdx].kickStrength;
 
     Entity &playerShootTrigger = createEntity();
     playerShootTrigger.AddComponent<Transform>();
@@ -130,7 +136,10 @@ void DefaultScene::init()
     enemyCol.m_mask = CAT_BALL | CAT_PLAYER | CAT_GROUND;
     enemy.GetComponent<Rigidbody>()->m_invInertiaTensor =
         Rigidbody::createSphereInverseInertiaTensor(1.0f, 2.0f);
-    enemy.AddComponent<Footballer>();
+    Footballer& enemyFb = enemy.AddComponent<Footballer>();
+    enemyFb.m_speed = CHARACTERS[m_enemyCharIdx].speed;
+    enemyFb.m_jumpHeight = CHARACTERS[m_enemyCharIdx].jumpHeight;
+    enemyFb.m_kickStrength = CHARACTERS[m_enemyCharIdx].kickStrength;
 
     Entity &enemyShootTrigger = createEntity();
     enemyShootTrigger.AddComponent<Transform>();

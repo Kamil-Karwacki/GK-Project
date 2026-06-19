@@ -34,12 +34,12 @@ class GeneticTrainer
 
     float m_mutationRate = 0.05f; // Change of mutation
     float m_mutationPower = 0.9f; // Mutation strength
-    
+
     // Decay parameters
-    float m_minMutationRate = 0.005f;
+    float m_minMutationRate = 0.05f;
     float m_minMutationPower = 0.1f;
-    float m_decayFactor = 0.99f;
-    
+    float m_decayFactor = 0.995f;
+
     uint16_t m_elitismCount = 30; // How many top agents aren't changed
     uint32_t m_generation = 0;
 

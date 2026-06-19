@@ -5,6 +5,15 @@
 #include "scripts/ball.hpp"
 #include "world/behaviour.hpp"
 
+struct CharacterDef {
+    const char* name;
+    const char* modelPath;
+    float speed;
+    float jumpHeight;
+    float kickStrength;
+};
+extern const CharacterDef CHARACTERS[3];
+
 class Footballer : public Behaviour
 {
   public:
