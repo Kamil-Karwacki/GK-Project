@@ -7,10 +7,14 @@
 #include "world/entity.hpp"
 
 const CharacterDef CHARACTERS[3] = {
-    {"Speedster", "assets/models/footballer1.obj", Footballer::BASE_SPEED * 1.3f, Footballer::BASE_JUMP_HEIGHT, Footballer::BASE_KICK_STRENGTH * 0.8f},
-    {"Powerhouse", "assets/models/footballer2.obj", Footballer::BASE_SPEED * 0.8f, Footballer::BASE_JUMP_HEIGHT * 1.1f, Footballer::BASE_KICK_STRENGTH * 1.5f},
-    {"Balanced", "assets/models/model.obj", Footballer::BASE_SPEED, Footballer::BASE_JUMP_HEIGHT, Footballer::BASE_KICK_STRENGTH}
-};
+    {"Fast player", "assets/models/footballer1.obj",
+     Footballer::BASE_SPEED * 1.3f, Footballer::BASE_JUMP_HEIGHT,
+     Footballer::BASE_KICK_STRENGTH * 0.8f},
+    {"Strong player", "assets/models/footballer2.obj",
+     Footballer::BASE_SPEED * 0.8f, Footballer::BASE_JUMP_HEIGHT * 1.1f,
+     Footballer::BASE_KICK_STRENGTH * 1.5f},
+    {"Balanced", "assets/models/model.obj", Footballer::BASE_SPEED,
+     Footballer::BASE_JUMP_HEIGHT, Footballer::BASE_KICK_STRENGTH}};
 
 void Footballer::onUpdate(float deltaTime)
 {
@@ -52,9 +56,10 @@ void Footballer::kickLoop()
 
     Transform *transform = m_entity->GetComponent<Transform>();
 
-    glm::vec3 front = transform->getFront();
-    glm::vec3 kickDir = -front;
-    front.y *= -1.2f;
+    glm::vec3 kickDir = transform->getFront();
+    kickDir.y += 0.2f; // slight upward lift
+    kickDir = glm::normalize(kickDir);
+
     float distToBall =
         glm::distance(transform->getPosition(), ballTrans->getPosition());
 
@@ -68,7 +73,7 @@ void Footballer::kickLoop()
         return;
     }
     float kickModifier = 8.0f / pow(distToBall, 1.5f);
-    ballRb->m_forceAcc -= m_kickStrength * kickDir * kickModifier;
+    ballRb->m_forceAcc += m_kickStrength * kickDir * kickModifier;
 
     m_ball->setLastContactFootballer(this);
 

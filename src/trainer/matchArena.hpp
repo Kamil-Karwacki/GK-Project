@@ -14,6 +14,7 @@ struct MatchArena
     float m_fitnessB = 0.0f;
     uint32_t m_arenaID = 0;
     bool m_needsReset = false;
+    bool m_autoReset = true;
     uint32_t m_framesSinceLastReset = 0;
     glm::vec3 m_arenaOffset;
 

@@ -44,7 +44,9 @@ class NeuralAgent : public Behaviour
     virtual ~NeuralAgent() override = default;
 
     bool saveToFile(const std::string &filename) const;
-    bool loadFromFile(const std::string &filename);
+    bool loadFromFile(const std::string &filename, bool squashOutput = true);
 
     const Matrix predict(const Matrix &input);
+
+    bool m_squashOutput = true;
 };

@@ -14,11 +14,16 @@ class EnemyController : public Behaviour
 
     float m_yaw = 0.0f;
     float m_pitch = 0.0f;
+    float m_lastTurnYaw = 0.0f;
+    float m_lastTurnPitch = 0.0f;
     float m_initialYaw = 0.0f;
 
     float m_maxDist = 10.0f;
 
     std::function<void(float)> onKickReward;
+    bool m_pythonControlled = false;
+
+    const Matrix& getInputMatrix() const { return m_inputMatrix; }
 
     void onStart() override;
     void onUpdate(float deltaTime) override;
@@ -33,8 +38,6 @@ class EnemyController : public Behaviour
 
     float m_lastMoveX = 0.0f;
     float m_lastMoveY = 0.0f;
-    float m_lastTurnYaw = 0.0f;
-    float m_lastTurnPitch = 0.0f;
     bool m_lastJump = false;
     bool m_lastKick = false;
 };

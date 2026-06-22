@@ -112,49 +112,13 @@ void MatchArena::updateFitness()
     m_fitnessA += deltaBallA * 4.0f;
     m_prevBallToGateB = currBallToGateB;
 
-    glm::vec3 agentAToBall = glm::normalize(ballPos - agentAPos);
-    glm::vec3 agentAToGateB = glm::normalize(m_gateBPos - agentAPos);
-    float shootAlignA = glm::dot(agentAToBall, agentAToGateB);
-    if (shootAlignA > 0.7f)
-        m_fitnessA += shootAlignA * 0.1f;
-
-    glm::vec3 agentAForward = transA->getFront();
-    float facingBallA = glm::dot(agentAForward, agentAToBall);
-    m_fitnessA += facingBallA * 0.005f;
-
-    glm::vec3 ballVel = ballRb ? ballRb->m_velocity : glm::vec3(0.0f);
-    if (glm::length(ballVel) > 0.0001f)
-    {
-        glm::vec3 ballDir = glm::normalize(ballVel);
-        glm::vec3 ballToGateB = glm::normalize(m_gateBPos - ballPos);
-        float ballVelAlignA = glm::dot(ballDir, ballToGateB);
-        if (ballVelAlignA > 0.0f)
-            m_fitnessA += ballVelAlignA * glm::length(ballVel) * 0.01f;
-
-        glm::vec3 ballToGateA = glm::normalize(m_gateAPos - ballPos);
-        float ballVelAlignB = glm::dot(ballDir, ballToGateA);
-        if (ballVelAlignB > 0.0f)
-            m_fitnessB += ballVelAlignB * glm::length(ballVel) * 0.01f;
-    }
-
-    m_fitnessA -= 0.01f;
-
     float currBallToGateA = glm::distance(ballPos, m_gateAPos);
     float deltaBallB = m_prevBallToGateA - currBallToGateA;
     m_fitnessB += deltaBallB * 4.0f;
     m_prevBallToGateA = currBallToGateA;
 
-    glm::vec3 agentBToBall = glm::normalize(ballPos - agentBPos);
-    glm::vec3 agentBToGateA = glm::normalize(m_gateAPos - agentBPos);
-    float shootAlignB = glm::dot(agentBToBall, agentBToGateA);
-    if (shootAlignB > 0.7f)
-        m_fitnessB += shootAlignB * 0.1f;
-
-    glm::vec3 agentBForward = transB->getFront();
-    float facingBallB = glm::dot(agentBForward, agentBToBall);
-    m_fitnessB += facingBallB * 0.005f;
-
-    m_fitnessB -= 0.01f;
+    m_fitnessA -= 0.05f;
+    m_fitnessB -= 0.05f;
 }
 
 void MatchArena::step(float deltaTime, float gravity)
@@ -174,7 +138,7 @@ void MatchArena::step(float deltaTime, float gravity)
 
     updateFitness();
 
-    if (m_needsReset || m_framesSinceLastReset > 1800)
+    if (m_autoReset && (m_needsReset || m_framesSinceLastReset > 1800))
     {
         resetPositions();
     }

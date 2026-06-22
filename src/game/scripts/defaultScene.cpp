@@ -33,8 +33,12 @@
 #include "world/entity.hpp"
 #include "world/scene.hpp"
 
-DefaultScene::DefaultScene(unsigned int whiteTextureId, int playerCharIdx, int enemyCharIdx)
-    : BaseScene(whiteTextureId), m_playerCharIdx(playerCharIdx), m_enemyCharIdx(enemyCharIdx) {}
+DefaultScene::DefaultScene(unsigned int whiteTextureId, int playerCharIdx,
+                           int enemyCharIdx)
+    : BaseScene(whiteTextureId), m_playerCharIdx(playerCharIdx),
+      m_enemyCharIdx(enemyCharIdx)
+{
+}
 
 DefaultScene::~DefaultScene()
 {
@@ -83,7 +87,7 @@ void DefaultScene::init()
     playerCol.m_mask = CAT_BALL | CAT_ENEMY | CAT_GROUND;
     player.GetComponent<Rigidbody>()->m_invInertiaTensor =
         Rigidbody::createSphereInverseInertiaTensor(1.0f, 2.0f);
-    Footballer& playerFb = player.AddComponent<Footballer>();
+    Footballer &playerFb = player.AddComponent<Footballer>();
     playerFb.m_speed = CHARACTERS[m_playerCharIdx].speed;
     playerFb.m_jumpHeight = CHARACTERS[m_playerCharIdx].jumpHeight;
     playerFb.m_kickStrength = CHARACTERS[m_playerCharIdx].kickStrength;
@@ -125,8 +129,12 @@ void DefaultScene::init()
                                   glm::vec3(0, glm::radians(180.0f), 0),
                                   glm::vec3(1.5f));
     EnemyController &enemyController = enemy.AddComponent<EnemyController>();
-    NeuralAgent &agent = enemy.AddComponent<NeuralAgent>(43, 256, 6);
-    agent.loadFromFile("best_brain.txt");
+    std::vector<uint32_t> layersSizes{43, 128, 128, 6};
+    NeuralAgent &agent = enemy.AddComponent<NeuralAgent>(layersSizes);
+    // Load the Python PPO model natively (squashOutput = false)
+    agent.loadFromFile("ppo_brain.txt", false);
+    // To switch back to C++ model, comment out the line above and uncomment the
+    // line below: agent.loadFromFile("best_brain.txt", true);
     enemy.AddComponent<MeshRenderer>(enemyModel, defaultShader);
     enemy.AddComponent<Rigidbody>(10.0f, 0.1f, 0.5f, 0.99f, 0.99f);
     SphereCollider &enemyCol =
@@ -136,7 +144,7 @@ void DefaultScene::init()
     enemyCol.m_mask = CAT_BALL | CAT_PLAYER | CAT_GROUND;
     enemy.GetComponent<Rigidbody>()->m_invInertiaTensor =
         Rigidbody::createSphereInverseInertiaTensor(1.0f, 2.0f);
-    Footballer& enemyFb = enemy.AddComponent<Footballer>();
+    Footballer &enemyFb = enemy.AddComponent<Footballer>();
     enemyFb.m_speed = CHARACTERS[m_enemyCharIdx].speed;
     enemyFb.m_jumpHeight = CHARACTERS[m_enemyCharIdx].jumpHeight;
     enemyFb.m_kickStrength = CHARACTERS[m_enemyCharIdx].kickStrength;

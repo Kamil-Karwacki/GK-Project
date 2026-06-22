@@ -31,6 +31,14 @@ void EnemyController::init(Entity *opponent, Entity *ball, glm::vec3 ownGatePos,
     m_ownGatePos = ownGatePos;
     m_enemyGatePos = enemyGatePos;
 
+    m_yaw = 0.0f;
+    m_initialYaw = m_yaw;
+
+    if (m_ownGatePos.z < m_enemyGatePos.z)
+    {
+        m_yaw = glm::radians(180.0f);
+        m_initialYaw = m_yaw;
+    }
     Footballer *footballer = m_entity->GetComponent<Footballer>();
     if (footballer)
     {
@@ -205,31 +213,46 @@ void EnemyController::onUpdate(float deltaTime)
         m_inputMatrix(i++, 0) = m_lastTurnPitch;
         m_inputMatrix(i++, 0) = m_lastTurnYaw;
 
-        Matrix outputs = agent->predict(m_inputMatrix);
-        m_lastMoveY = outputs(0, 0);
-        m_lastMoveX = outputs(1, 0);
-        m_lastJump = outputs(2, 0) > 0.0f;
-        m_lastKick = outputs(3, 0) > 0.0f;
-        m_lastTurnYaw = outputs(4, 0);
-        if (std::abs(m_lastTurnYaw) < 0.1f)
-            m_lastTurnYaw = 0.0f;
-        m_lastTurnPitch = outputs(5, 0);
+        if (!m_pythonControlled) {
+            Matrix outputs = agent->predict(m_inputMatrix);
+            
+            if (agent->m_squashOutput) {
+                // C++ Model Mapping
+                m_lastJump = outputs(2, 0) > 0.0f;
+                m_lastKick = outputs(3, 0) > 0.0f;
+                m_lastMoveY = outputs(0, 0);
+                m_lastMoveX = outputs(1, 0);
+                m_lastTurnYaw = outputs(4, 0);
+                m_lastTurnPitch = outputs(5, 0);
+            } else {
+                // Python Model Mapping
+                m_lastJump = outputs(2, 0) > 0.5f;
+                m_lastKick = outputs(3, 0) > 0.5f;
+                m_lastMoveX = std::max(-1.0, std::min(1.0, outputs(0, 0)));
+                m_lastMoveY = std::max(-1.0, std::min(1.0, outputs(1, 0)));
+                m_lastTurnYaw = outputs.m_rows >= 6 ? std::max(-2.0, std::min(2.0, outputs(4, 0))) * 2.0f : 0.0f;
+                m_lastTurnPitch = outputs.m_rows >= 6 ? std::max(-2.0, std::min(2.0, outputs(5, 0))) * 2.0f : 0.0f;
+            }
+
+        }
 
         assert(
             i == NUM_INPUTS &&
             "Number of generated input is different from size of the matrix!");
     }
 
-    footballer->m_input.y = m_lastMoveY;
-    footballer->m_input.x = m_lastMoveX;
+    if (!m_pythonControlled) {
+        footballer->m_input.y = m_lastMoveY;
+        footballer->m_input.x = m_lastMoveX;
 
-    if (m_lastJump)
-        footballer->m_jump = true;
+        if (m_lastJump)
+            footballer->m_jump = true;
 
-    if (m_lastKick)
-    {
-        footballer->kickBall();
-        m_lastKick = false;
+        if (m_lastKick)
+        {
+            footballer->kickBall();
+            m_lastKick = false;
+        }
     }
 
     static constexpr float TURN_SPEED_YAW = 10.0f;

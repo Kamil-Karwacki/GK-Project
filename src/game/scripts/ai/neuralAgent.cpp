@@ -17,7 +17,11 @@ const Matrix NeuralAgent::predict(const Matrix &input)
     {
         Multiply(m_layers[i].m_weights, *in_ptr, *out_ptr);
         Add(*out_ptr, m_layers[i].m_biases, *out_ptr);
-        TanhInPlace(*out_ptr);
+
+        bool isLastLayer = (i == m_layers.size() - 1);
+        if (!isLastLayer || m_squashOutput) {
+            TanhInPlace(*out_ptr);
+        }
 
         in_ptr = out_ptr;
         out_ptr = (out_ptr == &m_output) ? &m_hidden : &m_output;
@@ -59,8 +63,9 @@ bool NeuralAgent::saveToFile(const std::string &filename) const
     return true;
 }
 
-bool NeuralAgent::loadFromFile(const std::string &filename)
+bool NeuralAgent::loadFromFile(const std::string &filename, bool squashOutput)
 {
+    m_squashOutput = squashOutput;
     std::ifstream file(filename);
     if (!file.is_open())
     {

@@ -56,7 +56,7 @@ void HeadlessTrainerScene::generateArena(MatchArena &arena)
     arena.m_gateAPos = gatesInfo.gateAPos;
     arena.m_gateBPos = gatesInfo.gateBPos;
 
-    std::vector<uint32_t> layersSizes{43, 64, 64, 6};
+    std::vector<uint32_t> layersSizes{43, 128, 128, 6};
 
     // player A
     Entity &player = arena.createEntity(this);
