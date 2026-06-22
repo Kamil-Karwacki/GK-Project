@@ -59,10 +59,10 @@ void PlayerController::onUpdate(float deltaTime)
     float mouseSensitivity = 0.003f;
     m_yaw += mouseDeltaX * mouseSensitivity;
     m_pitch += mouseDeltaY * mouseSensitivity;
-    if (m_pitch > 0.45f)
-        m_pitch = 0.45f;
-    if (m_pitch < -0.45f)
-        m_pitch = -0.45f;
+    if (m_pitch > 1.2f)
+        m_pitch = 1.2f;
+    if (m_pitch < -1.2f)
+        m_pitch = -1.2f;
 
     footballer->m_rotation = glm::vec2(-m_pitch, m_yaw);
 }

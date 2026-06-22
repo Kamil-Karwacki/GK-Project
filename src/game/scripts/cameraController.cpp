@@ -10,8 +10,14 @@ void CameraController::onUpdate(float deltaTime)
     if (!cameraTransform || !playerTransform)
         return;
 
-    cameraTransform->setPosition(playerTransform->getPosition() -
-                                 playerTransform->getFront() * m_distToPlayer +
-                                 m_offset);
-    cameraTransform->lookAt(playerTransform->getPosition());
+    glm::vec3 desiredPos = playerTransform->getPosition() -
+                           playerTransform->getFront() * m_distToPlayer +
+                           m_offset;
+                           
+    if (desiredPos.y < 0.5f) {
+        desiredPos.y = 0.5f;
+    }
+
+    cameraTransform->setPosition(desiredPos);
+    cameraTransform->lookAt(playerTransform->getPosition() + glm::vec3(0, 2.0f, 0));
 }

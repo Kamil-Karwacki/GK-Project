@@ -181,7 +181,7 @@ void TrainerScene::generateArena(MatchArena &arena)
     ballCol.m_layer = CAT_BALL;
     ballCol.m_mask = CAT_BALL | CAT_PLAYER | CAT_ENEMY | CAT_GROUND;
 
-    sphere.AddComponent<Rigidbody>(0.5f, 0.3f, 30.0f, 0.8f, 0.8f);
+    sphere.AddComponent<Rigidbody>(1.0f, 0.3f, 30.0f, 0.8f, 0.8f);
     Rigidbody *sphereRb = sphere.GetComponent<Rigidbody>();
     sphereRb->m_invInertiaTensor =
         Rigidbody::createSphereInverseInertiaTensor(10.0f, 2.0f);

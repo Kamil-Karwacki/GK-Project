@@ -188,7 +188,7 @@ void DefaultScene::init()
     ballCol.m_layer = CAT_BALL;
     ballCol.m_mask = CAT_BALL | CAT_PLAYER | CAT_ENEMY | CAT_GROUND;
 
-    sphere.AddComponent<Rigidbody>(0.5f, 0.3f, 30.0f, 0.8f, 0.8f);
+    sphere.AddComponent<Rigidbody>(1.0f, 0.3f, 30.0f, 0.8f, 0.8f);
     Rigidbody *sphereRb = sphere.GetComponent<Rigidbody>();
     sphereRb->m_invInertiaTensor =
         Rigidbody::createSphereInverseInertiaTensor(10.0f, 2.0f);
@@ -238,8 +238,10 @@ void DefaultScene::init()
 
     m_gameState = GameState::Countdown;
     m_stateTimer = 3.0f;
-    if (m_player) m_player->GetComponent<Footballer>()->canMove = false;
-    if (m_enemy) m_enemy->GetComponent<Footballer>()->canMove = false;
+    if (m_player)
+        m_player->GetComponent<Footballer>()->canMove = false;
+    if (m_enemy)
+        m_enemy->GetComponent<Footballer>()->canMove = false;
 
     generatePowerups(&cameraPlayer);
 
@@ -250,7 +252,8 @@ void DefaultScene::update(float deltaTime)
 {
     Scene::update(deltaTime);
 
-    if (m_gameState == GameState::Playing) {
+    if (m_gameState == GameState::Playing)
+    {
         m_matchTimer -= deltaTime;
         if (m_matchTimer < 0.0f)
         {
@@ -259,21 +262,31 @@ void DefaultScene::update(float deltaTime)
             app.loadScene(std::make_unique<MenuScene>(app.getWhiteTexture()));
             return;
         }
-    } else if (m_gameState == GameState::GoalScored) {
+    }
+    else if (m_gameState == GameState::GoalScored)
+    {
         m_stateTimer -= deltaTime;
-        if (m_stateTimer <= 0.0f) {
+        if (m_stateTimer <= 0.0f)
+        {
             resetPositions();
             m_gameState = GameState::Countdown;
             m_stateTimer = 3.0f;
-            if (m_player) m_player->GetComponent<Footballer>()->canMove = false;
-            if (m_enemy) m_enemy->GetComponent<Footballer>()->canMove = false;
+            if (m_player)
+                m_player->GetComponent<Footballer>()->canMove = false;
+            if (m_enemy)
+                m_enemy->GetComponent<Footballer>()->canMove = false;
         }
-    } else if (m_gameState == GameState::Countdown) {
+    }
+    else if (m_gameState == GameState::Countdown)
+    {
         m_stateTimer -= deltaTime;
-        if (m_stateTimer <= 0.0f) {
+        if (m_stateTimer <= 0.0f)
+        {
             m_gameState = GameState::Playing;
-            if (m_player) m_player->GetComponent<Footballer>()->canMove = true;
-            if (m_enemy) m_enemy->GetComponent<Footballer>()->canMove = true;
+            if (m_player)
+                m_player->GetComponent<Footballer>()->canMove = true;
+            if (m_enemy)
+                m_enemy->GetComponent<Footballer>()->canMove = true;
         }
     }
 
@@ -388,27 +401,37 @@ void DefaultScene::drawUI()
 
     ImGui::End();
 
-    if (m_gameState == GameState::GoalScored) {
-        ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x * 0.5f, io.DisplaySize.y * 0.3f), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
+    if (m_gameState == GameState::GoalScored)
+    {
+        ImGui::SetNextWindowPos(
+            ImVec2(io.DisplaySize.x * 0.5f, io.DisplaySize.y * 0.3f),
+            ImGuiCond_Always, ImVec2(0.5f, 0.5f));
         ImGui::SetNextWindowBgAlpha(0.0f);
         ImGui::Begin("GoalText", nullptr, flags);
         ImGui::SetWindowFontScale(4.0f);
         float tw = ImGui::CalcTextSize(m_goalText.c_str()).x;
         ImGui::SetCursorPosX((ImGui::GetWindowSize().x - tw) * 0.5f);
-        ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.0f, 1.0f), "%s", m_goalText.c_str());
+        ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.0f, 1.0f), "%s",
+                           m_goalText.c_str());
         ImGui::SetWindowFontScale(1.0f);
         ImGui::End();
-    } else if (m_gameState == GameState::Countdown) {
-        ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x * 0.5f, io.DisplaySize.y * 0.5f), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
+    }
+    else if (m_gameState == GameState::Countdown)
+    {
+        ImGui::SetNextWindowPos(
+            ImVec2(io.DisplaySize.x * 0.5f, io.DisplaySize.y * 0.5f),
+            ImGuiCond_Always, ImVec2(0.5f, 0.5f));
         ImGui::SetNextWindowBgAlpha(0.0f);
         ImGui::Begin("CountdownText", nullptr, flags);
         ImGui::SetWindowFontScale(6.0f);
         int displayTime = static_cast<int>(std::ceil(m_stateTimer));
-        if (displayTime > 0) {
+        if (displayTime > 0)
+        {
             std::string cdText = std::to_string(displayTime);
             float tw = ImGui::CalcTextSize(cdText.c_str()).x;
             ImGui::SetCursorPosX((ImGui::GetWindowSize().x - tw) * 0.5f);
-            ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 1.0f), "%s", cdText.c_str());
+            ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 1.0f), "%s",
+                               cdText.c_str());
         }
         ImGui::SetWindowFontScale(1.0f);
         ImGui::End();
@@ -435,7 +458,8 @@ void DefaultScene::generateTerrain()
 
     auto onGoalA = [this]()
     {
-        if (m_gameState != GameState::Playing) return;
+        if (m_gameState != GameState::Playing)
+            return;
         m_enemyScore++;
         std::cout << "GOAL for ENEMY! Score is: " << m_playerScore << " - "
                   << m_enemyScore << "\n";
@@ -445,7 +469,8 @@ void DefaultScene::generateTerrain()
     };
     auto onGoalB = [this]()
     {
-        if (m_gameState != GameState::Playing) return;
+        if (m_gameState != GameState::Playing)
+            return;
         m_playerScore++;
         std::cout << "GOAL for PLAYER! Score is: " << m_playerScore << " - "
                   << m_enemyScore << "\n";
