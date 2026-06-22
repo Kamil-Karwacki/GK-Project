@@ -92,6 +92,11 @@ void Footballer::move(float deltaTime)
     if (!transform || !rigidbody)
         return;
 
+    if (!canMove) {
+        m_input = glm::vec2(0.0f);
+        m_jump = false;
+    }
+
     glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
 
     transform->setRotation(glm::vec3(0.0f, -m_rotation.y, 0.0f));

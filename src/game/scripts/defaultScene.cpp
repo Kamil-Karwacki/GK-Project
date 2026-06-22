@@ -236,6 +236,11 @@ void DefaultScene::init()
     m_enemy = &enemy;
     m_ball = &sphere;
 
+    m_gameState = GameState::Countdown;
+    m_stateTimer = 3.0f;
+    if (m_player) m_player->GetComponent<Footballer>()->canMove = false;
+    if (m_enemy) m_enemy->GetComponent<Footballer>()->canMove = false;
+
     generatePowerups(&cameraPlayer);
 
     std::cout << "Scene initialized successfully\n";
@@ -245,13 +250,31 @@ void DefaultScene::update(float deltaTime)
 {
     Scene::update(deltaTime);
 
-    m_matchTimer -= deltaTime;
-    if (m_matchTimer < 0.0f)
-    {
-        m_matchTimer = 0.0f;
-        Application &app = Application::Get();
-        app.loadScene(std::make_unique<MenuScene>(app.getWhiteTexture()));
-        return;
+    if (m_gameState == GameState::Playing) {
+        m_matchTimer -= deltaTime;
+        if (m_matchTimer < 0.0f)
+        {
+            m_matchTimer = 0.0f;
+            Application &app = Application::Get();
+            app.loadScene(std::make_unique<MenuScene>(app.getWhiteTexture()));
+            return;
+        }
+    } else if (m_gameState == GameState::GoalScored) {
+        m_stateTimer -= deltaTime;
+        if (m_stateTimer <= 0.0f) {
+            resetPositions();
+            m_gameState = GameState::Countdown;
+            m_stateTimer = 3.0f;
+            if (m_player) m_player->GetComponent<Footballer>()->canMove = false;
+            if (m_enemy) m_enemy->GetComponent<Footballer>()->canMove = false;
+        }
+    } else if (m_gameState == GameState::Countdown) {
+        m_stateTimer -= deltaTime;
+        if (m_stateTimer <= 0.0f) {
+            m_gameState = GameState::Playing;
+            if (m_player) m_player->GetComponent<Footballer>()->canMove = true;
+            if (m_enemy) m_enemy->GetComponent<Footballer>()->canMove = true;
+        }
     }
 
     Application &app = Application::Get();
@@ -364,6 +387,32 @@ void DefaultScene::drawUI()
     ImGui::Text("%02d:%02d", minutes, seconds);
 
     ImGui::End();
+
+    if (m_gameState == GameState::GoalScored) {
+        ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x * 0.5f, io.DisplaySize.y * 0.3f), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
+        ImGui::SetNextWindowBgAlpha(0.0f);
+        ImGui::Begin("GoalText", nullptr, flags);
+        ImGui::SetWindowFontScale(4.0f);
+        float tw = ImGui::CalcTextSize(m_goalText.c_str()).x;
+        ImGui::SetCursorPosX((ImGui::GetWindowSize().x - tw) * 0.5f);
+        ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.0f, 1.0f), "%s", m_goalText.c_str());
+        ImGui::SetWindowFontScale(1.0f);
+        ImGui::End();
+    } else if (m_gameState == GameState::Countdown) {
+        ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x * 0.5f, io.DisplaySize.y * 0.5f), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
+        ImGui::SetNextWindowBgAlpha(0.0f);
+        ImGui::Begin("CountdownText", nullptr, flags);
+        ImGui::SetWindowFontScale(6.0f);
+        int displayTime = static_cast<int>(std::ceil(m_stateTimer));
+        if (displayTime > 0) {
+            std::string cdText = std::to_string(displayTime);
+            float tw = ImGui::CalcTextSize(cdText.c_str()).x;
+            ImGui::SetCursorPosX((ImGui::GetWindowSize().x - tw) * 0.5f);
+            ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 1.0f), "%s", cdText.c_str());
+        }
+        ImGui::SetWindowFontScale(1.0f);
+        ImGui::End();
+    }
 }
 
 void DefaultScene::generateTerrain()
@@ -386,17 +435,23 @@ void DefaultScene::generateTerrain()
 
     auto onGoalA = [this]()
     {
+        if (m_gameState != GameState::Playing) return;
         m_enemyScore++;
         std::cout << "GOAL for ENEMY! Score is: " << m_playerScore << " - "
                   << m_enemyScore << "\n";
-        this->resetPositions();
+        m_gameState = GameState::GoalScored;
+        m_stateTimer = 3.0f;
+        m_goalText = "ENEMY SCORED!";
     };
     auto onGoalB = [this]()
     {
+        if (m_gameState != GameState::Playing) return;
         m_playerScore++;
         std::cout << "GOAL for PLAYER! Score is: " << m_playerScore << " - "
                   << m_enemyScore << "\n";
-        this->resetPositions();
+        m_gameState = GameState::GoalScored;
+        m_stateTimer = 3.0f;
+        m_goalText = "PLAYER SCORED!";
     };
 
     auto gatesInfo =

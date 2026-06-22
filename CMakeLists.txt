@@ -240,7 +240,14 @@ target_compile_definitions(soccer_engine PRIVATE HEADLESS_MODE)
 
 target_link_libraries(soccer_engine PRIVATE
     HeadSoccerCoreHeadless
-    #OpenMP::OpenMP_CXX
+    OpenMP::OpenMP_CXX
 )
 
 target_link_options(soccer_engine PRIVATE "-fuse-ld=lld")
+
+add_custom_command(TARGET soccer_engine POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_SOURCE_DIR}/src/trainer/train.py" "$<TARGET_FILE_DIR:soccer_engine>/train.py"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_SOURCE_DIR}/src/trainer/env_wrapper.py" "$<TARGET_FILE_DIR:soccer_engine>/env_wrapper.py"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_SOURCE_DIR}/src/trainer/export_model.py" "$<TARGET_FILE_DIR:soccer_engine>/export_model.py"
+    COMMENT "Copying Python training scripts to build directory..."
+)

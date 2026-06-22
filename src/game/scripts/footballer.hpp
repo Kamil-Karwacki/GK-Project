@@ -25,6 +25,7 @@ class Footballer : public Behaviour
     glm::vec2 m_input = glm::vec2(0.0f);
     glm::vec2 m_rotation = glm::vec2(0.0f);
     bool m_jump = false;
+    bool canMove = true;
     float m_groundTimer = 0.1f;
     Ball *m_ball = nullptr;
     std::function<void(bool, glm::vec3)> m_onKickCallback;

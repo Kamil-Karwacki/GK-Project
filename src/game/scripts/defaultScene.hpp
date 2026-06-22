@@ -1,10 +1,19 @@
 #pragma once
 #include "world/baseScene.hpp"
+#include <string>
+
+enum class GameState
+{
+    Playing,
+    GoalScored,
+    Countdown
+};
 
 class DefaultScene : public BaseScene
 {
   public:
-    DefaultScene(unsigned int whiteTextureId, int playerCharIdx = 0, int enemyCharIdx = 0);
+    DefaultScene(unsigned int whiteTextureId, int playerCharIdx = 0,
+                 int enemyCharIdx = 0);
     ~DefaultScene() override;
     void init() override;
     void update(float deltaTime) override;
@@ -26,6 +35,10 @@ class DefaultScene : public BaseScene
     Entity *m_player = nullptr;
     Entity *m_enemy = nullptr;
     Entity *m_ball = nullptr;
+
+    GameState m_gameState = GameState::Countdown;
+    float m_stateTimer = 3.0f;
+    std::string m_goalText = "";
 
   private:
     unsigned int m_skyboxVAO = 0;
