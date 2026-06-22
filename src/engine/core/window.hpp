@@ -13,6 +13,8 @@ public:
 
     int getWidth() const { return m_width; }
     int getHeight() const { return m_height; }
+    void setWidth(int width) { m_width = width; }
+    void setHeight(int height) { m_height = height; }
     GLFWwindow* getNativeWindow() const { return m_window; }
 
 private:

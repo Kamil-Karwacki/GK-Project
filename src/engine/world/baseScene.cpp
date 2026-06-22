@@ -3,6 +3,9 @@
 #include "physics/physicsSystem.hpp"
 #include "world/behaviour.hpp"
 #include "world/components/transform.hpp"
+#ifndef HEADLESS_MODE
+#include "core/application.hpp"
+#endif
 
 BaseScene::BaseScene(unsigned int whiteTextureId)
 {
@@ -43,5 +46,13 @@ glm::mat4 BaseScene::getMainViewMatrix() const
 
 glm::mat4 BaseScene::getMainProjectionMatrix() const
 {
-    return m_mainCamera ? m_mainCamera->getProjection() : glm::mat4(1.0f);
+    if (m_mainCamera) {
+#ifndef HEADLESS_MODE
+        Application& app = Application::Get();
+        float aspectRatio = (float)app.getWindowWidth() / (float)app.getWindowHeight();
+        m_mainCamera->aspectRatio = aspectRatio;
+#endif
+        return m_mainCamera->getProjection();
+    }
+    return glm::mat4(1.0f);
 }
