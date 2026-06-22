@@ -43,6 +43,8 @@ Application::Application() : m_isRunning(true)
                "assets/shaders/lineDebug.frag");
     loadShader("skybox", "assets/shaders/skybox.vert",
                "assets/shaders/skybox.frag");
+    loadShader("depth", "assets/shaders/depth.vert",
+               "assets/shaders/depth.frag");
     Debug::init();
 
     glEnable(GL_DEPTH_TEST);

@@ -10,10 +10,10 @@ const CharacterDef CHARACTERS[3] = {
     {"Fast player", "assets/models/footballer1.obj",
      Footballer::BASE_SPEED * 1.3f, Footballer::BASE_JUMP_HEIGHT,
      Footballer::BASE_KICK_STRENGTH * 0.8f},
-    {"Strong player", "assets/models/footballer2.obj",
+    {"Strong player", "assets/models/footballer3.obj",
      Footballer::BASE_SPEED * 0.8f, Footballer::BASE_JUMP_HEIGHT * 1.1f,
      Footballer::BASE_KICK_STRENGTH * 1.5f},
-    {"Balanced", "assets/models/model.obj", Footballer::BASE_SPEED,
+    {"Balanced", "assets/models/footballer2.obj", Footballer::BASE_SPEED,
      Footballer::BASE_JUMP_HEIGHT, Footballer::BASE_KICK_STRENGTH}};
 
 void Footballer::onUpdate(float deltaTime)
@@ -92,7 +92,8 @@ void Footballer::move(float deltaTime)
     if (!transform || !rigidbody)
         return;
 
-    if (!canMove) {
+    if (!canMove)
+    {
         m_input = glm::vec2(0.0f);
         m_jump = false;
     }

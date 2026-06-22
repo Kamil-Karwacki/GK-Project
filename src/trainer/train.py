@@ -22,11 +22,11 @@ def main():
         name_prefix="ppo_soccer"
     )
 
-    print("Starting massively parallel training...")
-    print("Press Ctrl+C at any time to safely stop training and save the model!")
+    print("Starting parallel training...")
+    print("Press Ctrl+C at any time to safely stop training and save the model")
     
     try:
-        model.learn(total_timesteps=100_000_000, callback=checkpoint_callback)
+        model.learn(total_timesteps=1_000_000_000, callback=checkpoint_callback)
     except KeyboardInterrupt:
         print("\nTraining interrupted by user. Saving current brain...")
     
