@@ -68,6 +68,22 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(pybind11)
 
+FetchContent_Declare(
+    miniaudio
+    GIT_REPOSITORY https://github.com/mackron/miniaudio.git
+    GIT_TAG        master
+)
+FetchContent_GetProperties(miniaudio)
+if(NOT miniaudio_POPULATED)
+    FetchContent_Populate(miniaudio)
+endif()
+
+add_library(miniaudio INTERFACE)
+target_include_directories(miniaudio INTERFACE ${miniaudio_SOURCE_DIR})
+if(UNIX AND NOT APPLE)
+    target_link_libraries(miniaudio INTERFACE pthread m dl)
+endif()
+
 add_library(imgui_lib STATIC
     ${imgui_SOURCE_DIR}/imgui.cpp
     ${imgui_SOURCE_DIR}/imgui_demo.cpp
@@ -119,6 +135,7 @@ add_library(HeadSoccerCore STATIC
     src/game/scripts/pitchGenerator.cpp
     src/game/scripts/shoeController.cpp
     src/game/scripts/powerup.cpp
+    src/third_party/miniaudio_implementation.cpp
     src/third_party/stb_implementation.cpp
     src/third_party/tinyobjloader_implementation.cpp
 )
@@ -138,6 +155,7 @@ target_link_libraries(HeadSoccerCore PUBLIC
     glad
     tinyobjloader
     imgui_lib
+    miniaudio
 )
 
 if(UNIX AND NOT APPLE)

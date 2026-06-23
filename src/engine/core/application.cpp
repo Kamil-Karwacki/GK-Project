@@ -77,9 +77,21 @@ Application::Application() : m_isRunning(true)
 
     const char *glsl_version = "#version 450";
     ImGui_ImplOpenGL3_Init(glsl_version);
+
+    ma_result result;
+    result = ma_engine_init(NULL, &m_soundEngine);
+    if (result != MA_SUCCESS)
+    {
+        std::cerr << "Failed to initialize sound engine!\n";
+        return;
+    }
 }
 
-Application::~Application() { glfwTerminate(); }
+Application::~Application()
+{
+    ma_engine_uninit(&m_soundEngine);
+    glfwTerminate();
+}
 
 void Application::run()
 {

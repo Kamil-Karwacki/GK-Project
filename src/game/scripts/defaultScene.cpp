@@ -60,6 +60,15 @@ void DefaultScene::init()
     glfwSetInputMode(app.m_window->getNativeWindow(), GLFW_CURSOR,
                      GLFW_CURSOR_DISABLED);
 
+    ma_result result = ma_sound_init_from_file(
+        &app.m_soundEngine, "assets/sounds/crowdBackground.mp3",
+        MA_SOUND_FLAG_STREAM, nullptr, nullptr, &m_matchMusic);
+    if (result == MA_SUCCESS)
+    {
+        ma_sound_set_looping(&m_matchMusic, MA_TRUE);
+        ma_sound_start(&m_matchMusic);
+    }
+
     Shader *defaultShader = app.getShader("default");
 
     Entity &player = createEntity();
@@ -134,7 +143,7 @@ void DefaultScene::init()
     // Load the Python PPO model natively (squashOutput = false)
     agent.loadFromFile("ppo_brain.txt", false);
     // To switch back to C++ model, comment out the line above and uncomment the
-    // line below: agent.loadFromFile("best_brain.txt", true);
+    // agent.loadFromFile("best_brain.txt", true);
     enemy.AddComponent<MeshRenderer>(enemyModel, defaultShader);
     enemy.AddComponent<Rigidbody>(10.0f, 0.1f, 0.5f, 0.99f, 0.99f);
     SphereCollider &enemyCol =
@@ -282,6 +291,9 @@ void DefaultScene::update(float deltaTime)
         m_stateTimer -= deltaTime;
         if (m_stateTimer <= 0.0f)
         {
+            Application &app = Application::Get();
+            ma_engine_play_sound(&app.m_soundEngine,
+                                 "assets/sounds/refWhistle.mp3", NULL);
             m_gameState = GameState::Playing;
             if (m_player)
                 m_player->GetComponent<Footballer>()->canMove = true;
@@ -460,6 +472,9 @@ void DefaultScene::generateTerrain()
     {
         if (m_gameState != GameState::Playing)
             return;
+        Application &app = Application::Get();
+        ma_engine_play_sound(&app.m_soundEngine, "assets/sounds/crowdCheer.mp3",
+                             NULL);
         m_enemyScore++;
         std::cout << "GOAL for ENEMY! Score is: " << m_playerScore << " - "
                   << m_enemyScore << "\n";
@@ -471,6 +486,9 @@ void DefaultScene::generateTerrain()
     {
         if (m_gameState != GameState::Playing)
             return;
+        Application &app = Application::Get();
+        ma_engine_play_sound(&app.m_soundEngine, "assets/sounds/crowdCheer.mp3",
+                             NULL);
         m_playerScore++;
         std::cout << "GOAL for PLAYER! Score is: " << m_playerScore << " - "
                   << m_enemyScore << "\n";

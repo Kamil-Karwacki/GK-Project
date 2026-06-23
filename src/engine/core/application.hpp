@@ -4,6 +4,7 @@
 
 #include "graphics/shader.hpp"
 #include "input.hpp"
+#include "miniaudio.h"
 #include "window.hpp"
 #include "world/baseScene.hpp"
 
@@ -32,6 +33,8 @@ class Application
 
     std::unique_ptr<Window> m_window;
     std::unique_ptr<BaseScene> m_activeScene;
+
+    ma_engine m_soundEngine;
 
   private:
     std::unique_ptr<InputManager> m_inputManager;

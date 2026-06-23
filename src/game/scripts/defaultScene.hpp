@@ -1,4 +1,5 @@
 #pragma once
+#include "miniaudio.h"
 #include "world/baseScene.hpp"
 #include <string>
 
@@ -39,6 +40,8 @@ class DefaultScene : public BaseScene
     GameState m_gameState = GameState::Countdown;
     float m_stateTimer = 3.0f;
     std::string m_goalText = "";
+
+    ma_sound m_matchMusic;
 
   private:
     unsigned int m_skyboxVAO = 0;
