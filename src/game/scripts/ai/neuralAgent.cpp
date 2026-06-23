@@ -19,7 +19,8 @@ const Matrix NeuralAgent::predict(const Matrix &input)
         Add(*out_ptr, m_layers[i].m_biases, *out_ptr);
 
         bool isLastLayer = (i == m_layers.size() - 1);
-        if (!isLastLayer || m_squashOutput) {
+        if (!isLastLayer || m_squashOutput)
+        {
             TanhInPlace(*out_ptr);
         }
 
@@ -45,7 +46,8 @@ bool NeuralAgent::saveToFile(const std::string &filename) const
 
     file << m_layers.size() << "\n";
 
-    auto writeMatrix = [&file](const Matrix &m) {
+    auto writeMatrix = [&file](const Matrix &m)
+    {
         file << m.m_rows << " " << m.m_cols << "\n";
         for (double val : m.m_data)
         {
@@ -80,7 +82,8 @@ bool NeuralAgent::loadFromFile(const std::string &filename, bool squashOutput)
 
     m_layers.clear();
 
-    auto readMatrix = [&file](Matrix &m) {
+    auto readMatrix = [&file](Matrix &m)
+    {
         int rows, cols;
         file >> rows >> cols;
         m.m_rows = rows;

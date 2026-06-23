@@ -92,11 +92,36 @@ void Footballer::move(float deltaTime)
     if (!transform || !rigidbody)
         return;
 
+    // Initialize last rotation on first run to match current transform orientation
+    if (m_lastRotation == glm::vec2(0.0f))
+    {
+        glm::vec3 euler = transform->getEulerAngles();
+        m_lastRotation = glm::vec2(-euler.x, -euler.y);
+    }
+
     if (!canMove)
     {
         m_input = glm::vec2(0.0f);
         m_jump = false;
+        m_rotation = glm::vec2(0.0f);
+
+        static constexpr float decelerationRate = 20.0f;
+        float t = decelerationRate * deltaTime;
+        if (t > 1.0f)
+            t = 1.0f;
+
+        rigidbody->m_velocity.x = Lerp(rigidbody->m_velocity.x, 0.0f, t);
+        rigidbody->m_velocity.z = Lerp(rigidbody->m_velocity.z, 0.0f, t);
+
+        // Enforce upright orientation and zero physical rotation spin
+        transform->setRotation(glm::vec3(-m_lastRotation.x, -m_lastRotation.y, 0.0f));
+        rigidbody->m_angularVelocity = glm::vec3(0.0f);
+
+        m_groundTimer -= deltaTime;
+        return;
     }
+
+    m_lastRotation = m_rotation;
 
     glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
 

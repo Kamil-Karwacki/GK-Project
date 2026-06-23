@@ -8,6 +8,7 @@ class PlayerController : public Behaviour
    public:
     void onStart() override;
     void onUpdate(float deltaTime) override;
+    void resetRotation(float yaw = 0.0f, float pitch = 0.0f);
     virtual ~PlayerController() override = default;
 
    private:

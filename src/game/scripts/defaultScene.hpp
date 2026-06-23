@@ -7,7 +7,8 @@ enum class GameState
 {
     Playing,
     GoalScored,
-    Countdown
+    Countdown,
+    GameFinished
 };
 
 class DefaultScene : public BaseScene
@@ -42,6 +43,7 @@ class DefaultScene : public BaseScene
     std::string m_goalText = "";
 
     ma_sound m_matchMusic;
+    bool m_isSoundInitialized = false;
 
   private:
     unsigned int m_skyboxVAO = 0;

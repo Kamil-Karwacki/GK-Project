@@ -42,6 +42,11 @@ DefaultScene::DefaultScene(unsigned int whiteTextureId, int playerCharIdx,
 
 DefaultScene::~DefaultScene()
 {
+    if (m_isSoundInitialized)
+    {
+        ma_sound_uninit(&m_matchMusic);
+    }
+
     if (m_skyboxVAO != 0)
     {
         glDeleteVertexArrays(1, &m_skyboxVAO);
@@ -65,6 +70,7 @@ void DefaultScene::init()
         MA_SOUND_FLAG_STREAM, nullptr, nullptr, &m_matchMusic);
     if (result == MA_SUCCESS)
     {
+        m_isSoundInitialized = true;
         ma_sound_set_looping(&m_matchMusic, MA_TRUE);
         ma_sound_start(&m_matchMusic);
     }
@@ -263,13 +269,28 @@ void DefaultScene::update(float deltaTime)
 
     if (m_gameState == GameState::Playing)
     {
-        m_matchTimer -= deltaTime;
-        if (m_matchTimer < 0.0f)
+        if (m_matchTimer > 0.0f)
         {
-            m_matchTimer = 0.0f;
-            Application &app = Application::Get();
-            app.loadScene(std::make_unique<MenuScene>(app.getWhiteTexture()));
-            return;
+            m_matchTimer -= deltaTime;
+            if (m_matchTimer < 0.0f)
+            {
+                m_matchTimer = 0.0f;
+            }
+        }
+
+        if (m_matchTimer == 0.0f)
+        {
+            if (m_playerScore != m_enemyScore)
+            {
+                m_gameState = GameState::GameFinished;
+                Application &app = Application::Get();
+                glfwSetInputMode(app.m_window->getNativeWindow(), GLFW_CURSOR,
+                                 GLFW_CURSOR_NORMAL);
+                if (m_player)
+                    m_player->GetComponent<Footballer>()->canMove = false;
+                if (m_enemy)
+                    m_enemy->GetComponent<Footballer>()->canMove = false;
+            }
         }
     }
     else if (m_gameState == GameState::GoalScored)
@@ -277,13 +298,27 @@ void DefaultScene::update(float deltaTime)
         m_stateTimer -= deltaTime;
         if (m_stateTimer <= 0.0f)
         {
-            resetPositions();
-            m_gameState = GameState::Countdown;
-            m_stateTimer = 3.0f;
-            if (m_player)
-                m_player->GetComponent<Footballer>()->canMove = false;
-            if (m_enemy)
-                m_enemy->GetComponent<Footballer>()->canMove = false;
+            if (m_matchTimer == 0.0f) // Golden goal scored
+            {
+                m_gameState = GameState::GameFinished;
+                Application &app = Application::Get();
+                glfwSetInputMode(app.m_window->getNativeWindow(), GLFW_CURSOR,
+                                 GLFW_CURSOR_NORMAL);
+                if (m_player)
+                    m_player->GetComponent<Footballer>()->canMove = false;
+                if (m_enemy)
+                    m_enemy->GetComponent<Footballer>()->canMove = false;
+            }
+            else
+            {
+                resetPositions();
+                m_gameState = GameState::Countdown;
+                m_stateTimer = 3.0f;
+                if (m_player)
+                    m_player->GetComponent<Footballer>()->canMove = false;
+                if (m_enemy)
+                    m_enemy->GetComponent<Footballer>()->canMove = false;
+            }
         }
     }
     else if (m_gameState == GameState::Countdown)
@@ -403,13 +438,21 @@ void DefaultScene::drawUI()
     ImGui::PopStyleVar();
 
     ImVec2 windowSize = ImGui::GetWindowSize();
-    float textWidth = ImGui::CalcTextSize("00:00").x;
-    ImGui::SetCursorPosX((windowSize.x - textWidth) * 0.5f);
-
-    int totalSeconds = static_cast<int>(m_matchTimer);
-    int minutes = totalSeconds / 60;
-    int seconds = totalSeconds % 60;
-    ImGui::Text("%02d:%02d", minutes, seconds);
+    if (m_matchTimer == 0.0f && m_gameState == GameState::Playing)
+    {
+        float textWidth = ImGui::CalcTextSize("GOLDEN GOAL!").x;
+        ImGui::SetCursorPosX((windowSize.x - textWidth) * 0.5f);
+        ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.0f, 1.0f), "GOLDEN GOAL!");
+    }
+    else
+    {
+        float textWidth = ImGui::CalcTextSize("00:00").x;
+        ImGui::SetCursorPosX((windowSize.x - textWidth) * 0.5f);
+        int totalSeconds = static_cast<int>(m_matchTimer);
+        int minutes = totalSeconds / 60;
+        int seconds = totalSeconds % 60;
+        ImGui::Text("%02d:%02d", minutes, seconds);
+    }
 
     ImGui::End();
 
@@ -448,6 +491,100 @@ void DefaultScene::drawUI()
         ImGui::SetWindowFontScale(1.0f);
         ImGui::End();
     }
+    else if (m_gameState == GameState::GameFinished)
+    {
+        ImGui::SetNextWindowPos(
+            ImVec2(io.DisplaySize.x * 0.5f, io.DisplaySize.y * 0.5f),
+            ImGuiCond_Always, ImVec2(0.5f, 0.5f));
+        ImGui::SetNextWindowSize(ImVec2(400.0f, 320.0f), ImGuiCond_Always);
+
+        ImGuiWindowFlags overlayFlags =
+            ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
+            ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar |
+            ImGuiWindowFlags_NoSavedSettings;
+
+        ImGui::PushStyleColor(ImGuiCol_WindowBg,
+                              ImVec4(0.05f, 0.05f, 0.08f, 0.9f));
+        ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0.2f, 0.4f, 0.8f, 0.7f));
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 12.0f);
+        ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 8.0f);
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 2.0f);
+
+        ImGui::Begin("GameFinishedWindow", nullptr, overlayFlags);
+
+        ImGui::Dummy(ImVec2(0.0f, 15.0f));
+
+        ImGui::SetWindowFontScale(2.2f);
+        std::string winText = "";
+        ImVec4 winColor;
+        if (m_playerScore > m_enemyScore)
+        {
+            winText = "VICTORY!";
+            winColor = ImVec4(0.2f, 0.8f, 0.2f, 1.0f); // Green
+        }
+        else
+        {
+            winText = "DEFEAT!";
+            winColor = ImVec4(0.8f, 0.2f, 0.2f, 1.0f); // Red
+        }
+
+        float tw = ImGui::CalcTextSize(winText.c_str()).x;
+        ImGui::SetCursorPosX((400.0f - tw) * 0.5f);
+        ImGui::TextColored(winColor, "%s", winText.c_str());
+        ImGui::SetWindowFontScale(1.0f);
+
+        ImGui::Dummy(ImVec2(0.0f, 15.0f));
+
+        // Match Result
+        ImGui::SetWindowFontScale(1.5f);
+        std::string scoreText = "Score: " + std::to_string(m_playerScore) +
+                                " - " + std::to_string(m_enemyScore);
+        float sw = ImGui::CalcTextSize(scoreText.c_str()).x;
+        ImGui::SetCursorPosX((400.0f - sw) * 0.5f);
+        ImGui::Text("%s", scoreText.c_str());
+        ImGui::SetWindowFontScale(1.0f);
+
+        ImGui::Dummy(ImVec2(0.0f, 35.0f));
+
+        float buttonWidth = 220.0f;
+        float buttonHeight = 45.0f;
+
+        // Restart button
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.1f, 0.6f, 0.2f, 1.0f));
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered,
+                              ImVec4(0.2f, 0.7f, 0.3f, 1.0f));
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive,
+                              ImVec4(0.08f, 0.5f, 0.15f, 1.0f));
+        ImGui::SetCursorPosX((400.0f - buttonWidth) * 0.5f);
+        if (ImGui::Button("RESTART MATCH", ImVec2(buttonWidth, buttonHeight)))
+        {
+            Application &app = Application::Get();
+            app.loadScene(std::make_unique<DefaultScene>(
+                app.getWhiteTexture(), m_playerCharIdx, m_enemyCharIdx));
+        }
+        ImGui::PopStyleColor(3);
+
+        ImGui::Dummy(ImVec2(0.0f, 15.0f));
+
+        // Main Menu button
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.2f, 0.4f, 0.8f, 1.0f));
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered,
+                              ImVec4(0.3f, 0.5f, 0.9f, 1.0f));
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive,
+                              ImVec4(0.1f, 0.3f, 0.7f, 1.0f));
+        ImGui::SetCursorPosX((400.0f - buttonWidth) * 0.5f);
+        if (ImGui::Button("MAIN MENU", ImVec2(buttonWidth, buttonHeight)))
+        {
+            Application &app = Application::Get();
+            app.loadScene(std::make_unique<MenuScene>(app.getWhiteTexture()));
+        }
+        ImGui::PopStyleColor(3);
+
+        ImGui::End();
+
+        ImGui::PopStyleColor(2);
+        ImGui::PopStyleVar(3);
+    }
 }
 
 void DefaultScene::generateTerrain()
@@ -480,7 +617,14 @@ void DefaultScene::generateTerrain()
                   << m_enemyScore << "\n";
         m_gameState = GameState::GoalScored;
         m_stateTimer = 3.0f;
-        m_goalText = "ENEMY SCORED!";
+        if (m_matchTimer == 0.0f)
+        {
+            m_goalText = "GOLDEN GOAL! ENEMY WINS!";
+        }
+        else
+        {
+            m_goalText = "ENEMY SCORED!";
+        }
 
         for (auto &entity : m_entities)
         {
@@ -503,7 +647,14 @@ void DefaultScene::generateTerrain()
                   << m_enemyScore << "\n";
         m_gameState = GameState::GoalScored;
         m_stateTimer = 3.0f;
-        m_goalText = "PLAYER SCORED!";
+        if (m_matchTimer == 0.0f)
+        {
+            m_goalText = "GOLDEN GOAL! PLAYER WINS!";
+        }
+        else
+        {
+            m_goalText = "PLAYER SCORED!";
+        }
 
         for (auto &entity : m_entities)
         {
@@ -579,6 +730,17 @@ void DefaultScene::resetPositions()
         m_player->GetComponent<Transform>()->setRotation(glm::vec3(0.0f));
         m_player->GetComponent<Rigidbody>()->m_velocity = glm::vec3(0);
         m_player->GetComponent<Rigidbody>()->m_angularVelocity = glm::vec3(0);
+
+        Footballer *fb = m_player->GetComponent<Footballer>();
+        if (fb)
+        {
+            fb->m_lastRotation = glm::vec2(0.0f, 0.0f);
+        }
+        PlayerController *pc = m_player->GetComponent<PlayerController>();
+        if (pc)
+        {
+            pc->resetRotation(0.0f, 0.0f);
+        }
     }
     if (m_enemy)
     {
@@ -587,6 +749,20 @@ void DefaultScene::resetPositions()
             glm::vec3(0.0f, glm::radians(180.0f), 0.0f));
         m_enemy->GetComponent<Rigidbody>()->m_velocity = glm::vec3(0);
         m_enemy->GetComponent<Rigidbody>()->m_angularVelocity = glm::vec3(0);
+
+        Footballer *fb = m_enemy->GetComponent<Footballer>();
+        if (fb)
+        {
+            fb->m_lastRotation = glm::vec2(0.0f, glm::radians(180.0f));
+        }
+        EnemyController *ec = m_enemy->GetComponent<EnemyController>();
+        if (ec)
+        {
+            ec->m_yaw = glm::radians(180.0f);
+            ec->m_pitch = 0.0f;
+            ec->m_lastTurnYaw = 0.0f;
+            ec->m_lastTurnPitch = 0.0f;
+        }
     }
     if (m_ball)
     {

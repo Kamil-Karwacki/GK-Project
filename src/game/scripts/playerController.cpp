@@ -25,6 +25,9 @@ void PlayerController::onUpdate(float deltaTime)
     if (!footballer)
         return;
 
+    if (!footballer->canMove)
+        return;
+
     Application &app = Application::Get();
     InputManager manager = app.GetInput();
 
@@ -65,4 +68,10 @@ void PlayerController::onUpdate(float deltaTime)
         m_pitch = -1.2f;
 
     footballer->m_rotation = glm::vec2(-m_pitch, m_yaw);
+}
+
+void PlayerController::resetRotation(float yaw, float pitch)
+{
+    m_yaw = yaw;
+    m_pitch = pitch;
 }
