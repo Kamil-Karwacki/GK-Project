@@ -460,6 +460,29 @@ generateGates(std::vector<std::unique_ptr<Entity>> &targetEntities,
             boxCol.m_offset, glm::vec3(0, 0, i * config.gateSize.z / 2));
         boxCol.m_layer = CAT_GROUND;
         boxCol.m_mask = CAT_BALL | CAT_PLAYER | CAT_ENEMY;
+
+        // Add a tilted roof collider on top of the gate to prevent the ball from getting stuck
+        {
+            auto entRoofSlope = std::make_unique<Entity>(scene);
+
+            float slopeAngle = -i * glm::radians(15.0f);
+            float gateCenterZ = i * config.pitchSize.x / 2.0f - (config.gateSize.z / 2.0f) * i;
+            float roofHeight = config.gateSize.y + config.gateThickness / 2.0f + 0.1f;
+
+            entRoofSlope->AddComponent<Transform>(
+                offset + glm::vec3(0.0f, roofHeight, gateCenterZ),
+                glm::vec3(slopeAngle, 0.0f, 0.0f),
+                glm::vec3(1.0f)
+            );
+
+            BoxCollider &slopeCol = entRoofSlope->AddComponentAs<Collider, BoxCollider>(
+                glm::vec3(config.gateSize.x / 2.0f, 0.1f, config.gateSize.z / 2.0f)
+            );
+            slopeCol.m_layer = CAT_GROUND;
+            slopeCol.m_mask = CAT_BALL | CAT_PLAYER | CAT_ENEMY;
+
+            targetEntities.push_back(std::move(entRoofSlope));
+        }
     }
 
 #ifndef HEADLESS_MODE
