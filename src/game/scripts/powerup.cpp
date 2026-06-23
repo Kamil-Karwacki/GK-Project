@@ -169,6 +169,23 @@ void Powerup::moveToRandomPosition()
     trans->setPosition(newPos);
 }
 
+void Powerup::reset()
+{
+    if (m_buffedFootballer)
+    {
+        revertEffect();
+    }
+    m_isActive = false;
+    m_buffTimer = 0.0f;
+    m_respawnTimer = getRandomRespawnTime();
+
+    Transform *trans = m_entity->GetComponent<Transform>();
+    if (trans)
+    {
+        trans->setScale(glm::vec3(0.0f));
+    }
+}
+
 float Powerup::getRandomRespawnTime()
 {
     std::random_device rd;

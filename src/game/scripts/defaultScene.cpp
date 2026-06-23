@@ -481,6 +481,15 @@ void DefaultScene::generateTerrain()
         m_gameState = GameState::GoalScored;
         m_stateTimer = 3.0f;
         m_goalText = "ENEMY SCORED!";
+
+        for (auto &entity : m_entities)
+        {
+            Powerup *powerup = entity->GetComponent<Powerup>();
+            if (powerup)
+            {
+                powerup->reset();
+            }
+        }
     };
     auto onGoalB = [this]()
     {
@@ -495,6 +504,15 @@ void DefaultScene::generateTerrain()
         m_gameState = GameState::GoalScored;
         m_stateTimer = 3.0f;
         m_goalText = "PLAYER SCORED!";
+
+        for (auto &entity : m_entities)
+        {
+            Powerup *powerup = entity->GetComponent<Powerup>();
+            if (powerup)
+            {
+                powerup->reset();
+            }
+        }
     };
 
     auto gatesInfo =

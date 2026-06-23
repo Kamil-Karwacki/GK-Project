@@ -27,6 +27,7 @@ class Powerup : public Behaviour
 
     void applyEffect(Footballer *footballer);
     void revertEffect();
+    void reset();
     void moveToRandomPosition();
     float getRandomRespawnTime();
     void setTargetEntity(Entity *target) { m_targetEntity = target; }
