@@ -27,8 +27,12 @@ float ShadowCalculation(vec4 fragPosLightSpace, vec3 normal, vec3 lightDir);
 
 void main()
 {    
+    vec4 texColor = texture(u_textureDiffuse1, v_texCoords);
+    if (texColor.a < 0.1)
+        discard;
+
     vec3 directionalLight = calculateDirLight();
-    FragColor = vec4(directionalLight, 1.0);
+    FragColor = vec4(directionalLight, texColor.a);
 }
 
 float ShadowCalculation(vec4 fragPosLightSpace, vec3 normal, vec3 lightDir)

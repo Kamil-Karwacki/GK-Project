@@ -7,8 +7,76 @@
 
 #ifndef HEADLESS_MODE
 #include "graphics/shader.hpp"
+#include "stb_image.h"
 #include "world/components/meshRenderer.hpp"
 #include <cmath>
+#include <glad/glad.h>
+#include <iostream>
+
+static unsigned int loadTexture(const std::string &path)
+{
+    unsigned int textureID;
+    glGenTextures(1, &textureID);
+    glBindTexture(GL_TEXTURE_2D, textureID);
+
+    stbi_set_flip_vertically_on_load(true);
+    int width, height, nrChannels;
+    unsigned char *data =
+        stbi_load(path.c_str(), &width, &height, &nrChannels, 4);
+    if (data)
+    {
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA,
+                     GL_UNSIGNED_BYTE, data);
+        glGenerateMipmap(GL_TEXTURE_2D);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
+                        GL_LINEAR_MIPMAP_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    }
+    else
+    {
+        std::cerr << "Failed to load texture: " << path << "\n";
+        textureID = 0;
+    }
+    stbi_image_free(data);
+    return textureID;
+}
+
+static std::shared_ptr<Model> createQuadModel(float width, float height,
+                                              float tilingX, float tilingY,
+                                              const glm::vec3 &color,
+                                              unsigned int textureID)
+{
+    std::vector<Vertex> vertices = {{{-width / 2.0f, -height / 2.0f, 0.0f},
+                                     {0.0f, 0.0f, 1.0f},
+                                     {0.0f, 0.0f},
+                                     color},
+                                    {{width / 2.0f, -height / 2.0f, 0.0f},
+                                     {0.0f, 0.0f, 1.0f},
+                                     {tilingX, 0.0f},
+                                     color},
+                                    {{width / 2.0f, height / 2.0f, 0.0f},
+                                     {0.0f, 0.0f, 1.0f},
+                                     {tilingX, tilingY},
+                                     color},
+                                    {{-width / 2.0f, height / 2.0f, 0.0f},
+                                     {0.0f, 0.0f, 1.0f},
+                                     {0.0f, tilingY},
+                                     color}};
+    std::vector<unsigned int> indices = {0, 1, 2, 2, 3, 0};
+    std::vector<Texture> textures;
+    if (textureID != 0)
+    {
+        Texture tex;
+        tex.id = textureID;
+        tex.type = "texture_diffuse";
+        textures.push_back(tex);
+    }
+    return std::make_shared<Model>(Mesh(vertices, indices, textures));
+}
 
 static void addBoxToMesh(std::vector<Vertex> &vertices,
                          std::vector<unsigned int> &indices,
@@ -393,6 +461,93 @@ generateGates(std::vector<std::unique_ptr<Entity>> &targetEntities,
         boxCol.m_layer = CAT_GROUND;
         boxCol.m_mask = CAT_BALL | CAT_PLAYER | CAT_ENEMY;
     }
+
+#ifndef HEADLESS_MODE
+    static unsigned int netTextureID = 0;
+    if (netTextureID == 0 && defaultShader)
+    {
+        netTextureID = loadTexture("assets/textures/net.png");
+    }
+
+    if (defaultShader && netTextureID != 0)
+    {
+        glm::vec3 netColor(1.0f, 1.0f, 1.0f);
+
+        float sideWidth = config.gateSize.z;
+        float sideHeight = config.gateSize.y;
+        auto sideNetModel =
+            createQuadModel(sideWidth, sideHeight, sideWidth / 2.0f,
+                            sideHeight / 2.0f, netColor, netTextureID);
+
+        float backWidth = config.gateSize.x;
+        float backHeight = config.gateSize.y;
+        auto backNetModel =
+            createQuadModel(backWidth, backHeight, backWidth / 2.0f,
+                            backHeight / 2.0f, netColor, netTextureID);
+
+        float topWidth = config.gateSize.x;
+        float topDepth = config.gateSize.z;
+        auto topNetModel =
+            createQuadModel(topWidth, topDepth, topWidth / 2.0f,
+                            topDepth / 2.0f, netColor, netTextureID);
+
+        for (int j = 1; j > -2; j -= 2)
+        {
+            float gateCenterZ =
+                j * config.pitchSize.x / 2.0f - (config.gateSize.z / 2.0f) * j;
+            float backNetZ = j * config.pitchSize.x / 2.0f - 0.5f * j;
+
+            // 1. Left side net
+            {
+                auto entSideL = std::make_unique<Entity>(scene);
+                entSideL->AddComponent<Transform>(
+                    offset + glm::vec3(-config.gateSize.x / 2.0f,
+                                       config.gateSize.y / 2.0f, gateCenterZ),
+                    glm::vec3(0.0f, glm::radians(90.0f), 0.0f),
+                    glm::vec3(1.0f));
+                entSideL->AddComponent<MeshRenderer>(sideNetModel,
+                                                     defaultShader);
+                targetEntities.push_back(std::move(entSideL));
+            }
+
+            // 2. Right side net
+            {
+                auto entSideR = std::make_unique<Entity>(scene);
+                entSideR->AddComponent<Transform>(
+                    offset + glm::vec3(config.gateSize.x / 2.0f,
+                                       config.gateSize.y / 2.0f, gateCenterZ),
+                    glm::vec3(0.0f, glm::radians(90.0f), 0.0f),
+                    glm::vec3(1.0f));
+                entSideR->AddComponent<MeshRenderer>(sideNetModel,
+                                                     defaultShader);
+                targetEntities.push_back(std::move(entSideR));
+            }
+
+            // 3. Back net
+            {
+                auto entBack = std::make_unique<Entity>(scene);
+                entBack->AddComponent<Transform>(
+                    offset +
+                        glm::vec3(0.0f, config.gateSize.y / 2.0f, backNetZ),
+                    glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f));
+                entBack->AddComponent<MeshRenderer>(backNetModel,
+                                                    defaultShader);
+                targetEntities.push_back(std::move(entBack));
+            }
+
+            // 4. Top net
+            {
+                auto entTop = std::make_unique<Entity>(scene);
+                entTop->AddComponent<Transform>(
+                    offset + glm::vec3(0.0f, config.gateSize.y, gateCenterZ),
+                    glm::vec3(glm::radians(90.0f), 0.0f, 0.0f),
+                    glm::vec3(1.0f));
+                entTop->AddComponent<MeshRenderer>(topNetModel, defaultShader);
+                targetEntities.push_back(std::move(entTop));
+            }
+        }
+    }
+#endif
 
     GeneratedGatesInfo info;
     info.gateAPos =
