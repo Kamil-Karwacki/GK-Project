@@ -280,7 +280,7 @@ void MenuScene::drawUI()
     {
         ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x * 0.5f, io.DisplaySize.y * 0.5f),
                                 ImGuiCond_Always, ImVec2(0.5f, 0.5f));
-        ImGui::SetNextWindowSize(ImVec2(600.0f, 400.0f), ImGuiCond_Always);
+        ImGui::SetNextWindowSize(ImVec2(600.0f, 500.0f), ImGuiCond_Always);
 
         ImGuiWindowFlags flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
                                  ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar |
@@ -345,7 +345,46 @@ void MenuScene::drawUI()
         ImGui::Text("Kick: %.0f", CHARACTERS[m_enemyCharIdx].kickStrength);
 
         ImGui::Columns(1);
-        ImGui::Dummy(ImVec2(0.0f, 30.0f));
+
+        ImGui::Dummy(ImVec2(0.0f, 10.0f));
+        ImGui::Separator();
+        ImGui::Dummy(ImVec2(0.0f, 5.0f));
+
+        ImGui::SetWindowFontScale(1.2f);
+        float controlsTitleWidth = ImGui::CalcTextSize("CONTROLS").x;
+        ImGui::SetCursorPosX((600.0f - controlsTitleWidth) * 0.5f);
+        ImGui::TextColored(ImVec4(0.3f, 0.6f, 1.0f, 1.0f), "CONTROLS");
+        ImGui::SetWindowFontScale(1.0f);
+
+        ImGui::Dummy(ImVec2(0.0f, 5.0f));
+
+        float colWidth = 260.0f;
+        float startX1 = (600.0f - colWidth * 2.0f) * 0.5f + 20.0f;
+        float startX2 = startX1 + colWidth;
+
+        ImGui::SetCursorPosX(startX1);
+        ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.7f, 1.0f), "Move: ");
+        ImGui::SameLine();
+        ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 1.0f), "W, A, S, D");
+
+        ImGui::SameLine(startX2);
+        ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.7f, 1.0f), "Rotate: ");
+        ImGui::SameLine();
+        ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 1.0f), "Mouse");
+
+        ImGui::Spacing();
+
+        ImGui::SetCursorPosX(startX1);
+        ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.7f, 1.0f), "Jump: ");
+        ImGui::SameLine();
+        ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 1.0f), "Space");
+
+        ImGui::SameLine(startX2);
+        ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.7f, 1.0f), "Kick: ");
+        ImGui::SameLine();
+        ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 1.0f), "Left Control");
+
+        ImGui::Dummy(ImVec2(0.0f, 25.0f));
 
         float buttonWidth = 180.0f;
         float buttonHeight = 40.0f;
