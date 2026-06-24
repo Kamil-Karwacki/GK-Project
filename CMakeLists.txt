@@ -13,11 +13,14 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 if(MSVC)
     set(COMPILER_WARNINGS /W4)
     set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
-else()
+else()
+    # MinGW / GCC settings
     set(COMPILER_WARNINGS -Wall -Wextra -pedantic)
     add_compile_options(-O3)
+    
+    # Force static linking of standard GCC libraries
+    add_link_options(-static-libgcc -static-libstdc++ -static)
 endif()
-
 include(FetchContent)
 
 FetchContent_Declare(

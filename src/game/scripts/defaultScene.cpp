@@ -265,6 +265,38 @@ void DefaultScene::init()
 
 void DefaultScene::update(float deltaTime)
 {
+    Application &app = Application::Get();
+    if (app.GetInput().isKeyPressed(GLFW_KEY_ESCAPE))
+    {
+        if (m_gameState != GameState::GameFinished)
+        {
+            m_isPaused = !m_isPaused;
+            if (m_isPaused)
+            {
+                if (m_isSoundInitialized)
+                {
+                    ma_sound_stop(&m_matchMusic);
+                }
+                glfwSetInputMode(app.m_window->getNativeWindow(), GLFW_CURSOR,
+                                 GLFW_CURSOR_NORMAL);
+            }
+            else
+            {
+                if (m_isSoundInitialized)
+                {
+                    ma_sound_start(&m_matchMusic);
+                }
+                glfwSetInputMode(app.m_window->getNativeWindow(), GLFW_CURSOR,
+                                 GLFW_CURSOR_DISABLED);
+            }
+        }
+    }
+
+    if (m_isPaused)
+    {
+        return;
+    }
+
     Scene::update(deltaTime);
 
     if (m_gameState == GameState::Playing)
@@ -337,15 +369,14 @@ void DefaultScene::update(float deltaTime)
         }
     }
 
-    Application &app = Application::Get();
-    if (app.GetInput().isKeyPressed(GLFW_KEY_ESCAPE))
-    {
-        app.loadScene(std::make_unique<MenuScene>(app.getWhiteTexture()));
-    }
 }
 
 void DefaultScene::fixedUpdate(float deltaTime)
 {
+    if (m_isPaused)
+    {
+        return;
+    }
     static constexpr float gravity = 42.0f;
     for (auto &entity : m_entities)
     {
@@ -456,7 +487,93 @@ void DefaultScene::drawUI()
 
     ImGui::End();
 
-    if (m_gameState == GameState::GoalScored)
+    if (m_isPaused)
+    {
+        Application &app = Application::Get();
+        ImGui::SetNextWindowPos(
+            ImVec2(io.DisplaySize.x * 0.5f, io.DisplaySize.y * 0.5f),
+            ImGuiCond_Always, ImVec2(0.5f, 0.5f));
+        ImGui::SetNextWindowSize(ImVec2(400.0f, 350.0f), ImGuiCond_Always);
+
+        ImGuiWindowFlags overlayFlags =
+            ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
+            ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar |
+            ImGuiWindowFlags_NoSavedSettings;
+
+        ImGui::PushStyleColor(ImGuiCol_WindowBg,
+                              ImVec4(0.05f, 0.05f, 0.08f, 0.95f));
+        ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0.2f, 0.5f, 1.0f, 0.8f));
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 12.0f);
+        ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 8.0f);
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 2.0f);
+
+        ImGui::Begin("PauseMenuWindow", nullptr, overlayFlags);
+
+        ImGui::Dummy(ImVec2(0.0f, 15.0f));
+
+        ImGui::SetWindowFontScale(2.2f);
+        std::string pauseText = "GAME PAUSED";
+        float tw = ImGui::CalcTextSize(pauseText.c_str()).x;
+        ImGui::SetCursorPosX((400.0f - tw) * 0.5f);
+        ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.0f, 1.0f), "%s", pauseText.c_str());
+        ImGui::SetWindowFontScale(1.0f);
+
+        ImGui::Dummy(ImVec2(0.0f, 25.0f));
+
+        float buttonWidth = 220.0f;
+        float buttonHeight = 45.0f;
+
+        // Resume button
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.1f, 0.6f, 0.2f, 1.0f));
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.2f, 0.7f, 0.3f, 1.0f));
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.08f, 0.5f, 0.15f, 1.0f));
+        ImGui::SetCursorPosX((400.0f - buttonWidth) * 0.5f);
+        if (ImGui::Button("RESUME", ImVec2(buttonWidth, buttonHeight)))
+        {
+            m_isPaused = false;
+            if (m_isSoundInitialized)
+            {
+                ma_sound_start(&m_matchMusic);
+            }
+            glfwSetInputMode(app.m_window->getNativeWindow(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+        }
+        ImGui::PopStyleColor(3);
+
+        ImGui::Dummy(ImVec2(0.0f, 15.0f));
+
+        // Restart button
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.15f, 0.15f, 0.2f, 1.0f));
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.25f, 0.25f, 0.35f, 1.0f));
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.1f, 0.1f, 0.15f, 1.0f));
+        ImGui::SetCursorPosX((400.0f - buttonWidth) * 0.5f);
+        if (ImGui::Button("RESTART MATCH", ImVec2(buttonWidth, buttonHeight)))
+        {
+            Application &app = Application::Get();
+            app.loadScene(std::make_unique<DefaultScene>(
+                app.getWhiteTexture(), m_playerCharIdx, m_enemyCharIdx));
+        }
+        ImGui::PopStyleColor(3);
+
+        ImGui::Dummy(ImVec2(0.0f, 15.0f));
+
+        // Main Menu button
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.2f, 0.4f, 0.8f, 1.0f));
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.3f, 0.5f, 0.9f, 1.0f));
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.1f, 0.3f, 0.7f, 1.0f));
+        ImGui::SetCursorPosX((400.0f - buttonWidth) * 0.5f);
+        if (ImGui::Button("MAIN MENU", ImVec2(buttonWidth, buttonHeight)))
+        {
+            Application &app = Application::Get();
+            app.loadScene(std::make_unique<MenuScene>(app.getWhiteTexture()));
+        }
+        ImGui::PopStyleColor(3);
+
+        ImGui::End();
+
+        ImGui::PopStyleColor(2);
+        ImGui::PopStyleVar(3);
+    }
+    else if (m_gameState == GameState::GoalScored)
     {
         ImGui::SetNextWindowPos(
             ImVec2(io.DisplaySize.x * 0.5f, io.DisplaySize.y * 0.3f),

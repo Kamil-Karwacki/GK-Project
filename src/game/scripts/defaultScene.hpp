@@ -44,6 +44,7 @@ class DefaultScene : public BaseScene
 
     ma_sound m_matchMusic;
     bool m_isSoundInitialized = false;
+    bool m_isPaused = false;
 
   private:
     unsigned int m_skyboxVAO = 0;
