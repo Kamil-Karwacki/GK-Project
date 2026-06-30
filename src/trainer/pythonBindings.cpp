@@ -1,5 +1,6 @@
 #include "headlessApplication.hpp"
 #include "headlessTrainerScene.hpp"
+#include "scripts/ai/neuralAgent.hpp"
 #include "scripts/enemyController.hpp"
 #include "scripts/footballer.hpp"
 #include "world/components/rigidbody.hpp"
@@ -36,14 +37,19 @@ class SoccerEnv
                 arena.m_playerB->GetComponent<EnemyController>();
             if (enemyControllerB)
             {
-                enemyControllerB->m_pythonControlled = true;
+                enemyControllerB->m_pythonControlled = false;
+            }
+            auto *neuralB = arena.m_playerB->GetComponent<NeuralAgent>();
+            if (neuralB)
+            {
+                neuralB->m_squashOutput = false;
             }
         }
-        m_prevFitness.resize(num_envs(), 0.0f);
+        m_prevFitness.resize(m_scene->m_arenas.size(), 0.0f);
         m_frameCount.resize(m_scene->m_arenas.size(), 0);
     }
 
-    int num_envs() const { return m_scene->m_arenas.size() * 2; }
+    int num_envs() const { return m_scene->m_arenas.size(); }
     int observationSize() const { return 43; }
     int actionSize() const { return 6; }
 
@@ -60,7 +66,6 @@ class SoccerEnv
             m_scene->m_arenas[i].m_fitnessB = 0.0f;
             m_frameCount[i] = 0;
             m_prevFitness[i] = 0.0f;
-            m_prevFitness[i + num_arenas] = 0.0f;
         }
         for (int i = 0; i < num_envs(); i++)
         {
@@ -75,15 +80,11 @@ class SoccerEnv
     py::tuple step(py::array_t<float> actions)
     {
         auto acts_buf = actions.unchecked<2>();
-        int num_arenas = m_scene->m_arenas.size();
 
-        // Apply actions to all arenas
+        // Apply actions to all arenas (for player A)
         for (int i = 0; i < num_envs(); i++)
         {
-            int arena_idx = i % num_arenas;
-            bool is_b = (i >= num_arenas);
-            Entity *playerEnt = is_b ? m_scene->m_arenas[arena_idx].m_playerB
-                                     : m_scene->m_arenas[arena_idx].m_playerA;
+            Entity *playerEnt = m_scene->m_arenas[i].m_playerA;
 
             auto *footballer = playerEnt->GetComponent<Footballer>();
             if (footballer)
@@ -104,7 +105,9 @@ class SoccerEnv
         }
 
         // Step physics and C++ scripts
-        m_app->step(1.0f / 60.0f);
+        for (int k = 0; k < 2; k++) {
+            m_app->step(1.0f / 60.0f);
+        }
 
         auto obs_result = py::array_t<float>({num_envs(), observationSize()});
         auto obs_buf = obs_result.mutable_unchecked<2>();
@@ -117,27 +120,21 @@ class SoccerEnv
 
         for (int i = 0; i < num_envs(); i++)
         {
-            int arena_idx = i % num_arenas;
-            bool is_b = (i >= num_arenas);
-            MatchArena &arena = m_scene->m_arenas[arena_idx];
+            MatchArena &arena = m_scene->m_arenas[i];
+            m_frameCount[i]++;
 
-            if (!is_b)
-            {
-                m_frameCount[arena_idx]++;
-            }
-
-            float current_fitness = is_b ? arena.m_fitnessB : arena.m_fitnessA;
+            float current_fitness = arena.m_fitnessA;
             float reward = current_fitness - m_prevFitness[i];
             m_prevFitness[i] = current_fitness;
             rewards_buf(i) = reward;
 
             bool done =
-                arena.m_needsReset || m_frameCount[arena_idx] >= MAX_FRAMES;
+                arena.m_needsReset || m_frameCount[i] >= MAX_FRAMES;
             dones_buf(i) = done;
 
             py::dict info;
 
-            Entity *playerEnt = is_b ? arena.m_playerB : arena.m_playerA;
+            Entity *playerEnt = arena.m_playerA;
             auto *enemyController = playerEnt->GetComponent<EnemyController>();
 
             if (done)
@@ -180,6 +177,7 @@ class SoccerEnv
             infos.append(info);
         }
 
+        int num_arenas = m_scene->m_arenas.size();
         // Now reset the arenas that are done
         for (int i = 0; i < num_arenas; i++)
         {
@@ -192,11 +190,31 @@ class SoccerEnv
                 arena.m_fitnessB = 0.0f;
                 m_frameCount[i] = 0;
                 m_prevFitness[i] = 0.0f;
-                m_prevFitness[i + num_arenas] = 0.0f;
             }
         }
 
         return py::make_tuple(obs_result, rewards_result, dones_result, infos);
+    }
+
+    bool set_opponent(int arena_idx, const std::string &brain_path)
+    {
+        if (arena_idx < 0 || arena_idx >= static_cast<int>(m_scene->m_arenas.size()))
+        {
+            return false;
+        }
+        MatchArena &arena = m_scene->m_arenas[arena_idx];
+        if (!arena.m_playerB)
+            return false;
+        auto *neuralB = arena.m_playerB->GetComponent<NeuralAgent>();
+        if (!neuralB)
+            return false;
+        auto *enemyControllerB =
+            arena.m_playerB->GetComponent<EnemyController>();
+        if (enemyControllerB)
+        {
+            enemyControllerB->m_pythonControlled = false;
+        }
+        return neuralB->loadFromFile(brain_path, false);
     }
 
   private:
@@ -217,5 +235,6 @@ PYBIND11_MODULE(soccer_engine, m)
         .def("step", &SoccerEnv::step)
         .def("num_envs", &SoccerEnv::num_envs)
         .def("observation_size", &SoccerEnv::observationSize)
-        .def("action_size", &SoccerEnv::actionSize);
+        .def("action_size", &SoccerEnv::actionSize)
+        .def("set_opponent", &SoccerEnv::set_opponent);
 }
