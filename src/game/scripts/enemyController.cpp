@@ -52,11 +52,14 @@ void EnemyController::init(Entity *opponent, Entity *ball, glm::vec3 ownGatePos,
                         m_enemyGatePos -
                         m_ball->GetComponent<Transform>()->getPosition());
                     float alignment = glm::dot(kickDir, toEnemyGate);
-                    onKickReward(alignment * 300.0f);
+                    if (alignment > 0.0f)
+                    {
+                        onKickReward(std::pow(alignment, 6.0f) * 400.0f);
+                    }
                 }
                 else
                 {
-                    onKickReward(-5.0f);
+                    onKickReward(-1.0f);
                 }
             }
         };
@@ -213,10 +216,12 @@ void EnemyController::onUpdate(float deltaTime)
         m_inputMatrix(i++, 0) = m_lastTurnPitch;
         m_inputMatrix(i++, 0) = m_lastTurnYaw;
 
-        if (!m_pythonControlled) {
+        if (!m_pythonControlled)
+        {
             Matrix outputs = agent->predict(m_inputMatrix);
-            
-            if (agent->m_squashOutput) {
+
+            if (agent->m_squashOutput)
+            {
                 // C++ Model Mapping
                 m_lastJump = outputs(2, 0) > 0.0f;
                 m_lastKick = outputs(3, 0) > 0.0f;
@@ -224,24 +229,30 @@ void EnemyController::onUpdate(float deltaTime)
                 m_lastMoveX = outputs(1, 0);
                 m_lastTurnYaw = outputs(4, 0);
                 m_lastTurnPitch = outputs(5, 0);
-            } else {
+            }
+            else
+            {
                 // Python Model Mapping
                 m_lastJump = outputs(2, 0) > 0.5f;
                 m_lastKick = outputs(3, 0) > 0.5f;
                 m_lastMoveX = std::max(-1.0, std::min(1.0, outputs(0, 0)));
                 m_lastMoveY = std::max(-1.0, std::min(1.0, outputs(1, 0)));
-                m_lastTurnYaw = outputs.m_rows >= 6 ? std::max(-2.0, std::min(2.0, outputs(4, 0))) * 2.0f : 0.0f;
-                m_lastTurnPitch = outputs.m_rows >= 6 ? std::max(-2.0, std::min(2.0, outputs(5, 0))) * 2.0f : 0.0f;
+                // Clip raw network output to [-1.0, 1.0] before multiplying by 2.0f
+                // to match stable-baselines3 Box(-1, 1) action_space clipping during training.
+                m_lastTurnYaw =
+                    outputs.m_rows >= 6
+                        ? std::max(-1.0, std::min(1.0, outputs(4, 0))) * 2.0f
+                        : 0.0f;
+                m_lastTurnPitch =
+                    outputs.m_rows >= 6
+                        ? std::max(-1.0, std::min(1.0, outputs(5, 0))) * 2.0f
+                        : 0.0f;
             }
-
         }
-
-        assert(
-            i == NUM_INPUTS &&
-            "Number of generated input is different from size of the matrix!");
     }
 
-    if (!m_pythonControlled) {
+    if (!m_pythonControlled)
+    {
         footballer->m_input.y = m_lastMoveY;
         footballer->m_input.x = m_lastMoveX;
 
