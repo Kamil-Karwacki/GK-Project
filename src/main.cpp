@@ -1,9 +1,9 @@
 #include "core/application.hpp"
 #include "game/scripts/menuScene.hpp"
 
-int main()
+int main(int argc, char *argv[])
 {
-    Application app;
+    Application app(argc, argv);
 
     std::unique_ptr<MenuScene> menuScene =
         std::make_unique<MenuScene>(app.getWhiteTexture());

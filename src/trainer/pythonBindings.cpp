@@ -3,8 +3,6 @@
 #include "scripts/ai/neuralAgent.hpp"
 #include "scripts/enemyController.hpp"
 #include "scripts/footballer.hpp"
-#include "world/components/rigidbody.hpp"
-#include "world/components/transform.hpp"
 #include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
 #include <vector>
@@ -105,7 +103,8 @@ class SoccerEnv
         }
 
         // Step physics and C++ scripts
-        for (int k = 0; k < 2; k++) {
+        for (int k = 0; k < 2; k++)
+        {
             m_app->step(1.0f / 60.0f);
         }
 
@@ -128,8 +127,7 @@ class SoccerEnv
             m_prevFitness[i] = current_fitness;
             rewards_buf(i) = reward;
 
-            bool done =
-                arena.m_needsReset || m_frameCount[i] >= MAX_FRAMES;
+            bool done = arena.m_needsReset || m_frameCount[i] >= MAX_FRAMES;
             dones_buf(i) = done;
 
             py::dict info;
@@ -178,7 +176,7 @@ class SoccerEnv
         }
 
         int num_arenas = m_scene->m_arenas.size();
-        // Now reset the arenas that are done
+        // reset the arenas that are done
         for (int i = 0; i < num_arenas; i++)
         {
             MatchArena &arena = m_scene->m_arenas[i];
@@ -198,7 +196,8 @@ class SoccerEnv
 
     bool set_opponent(int arena_idx, const std::string &brain_path)
     {
-        if (arena_idx < 0 || arena_idx >= static_cast<int>(m_scene->m_arenas.size()))
+        if (arena_idx < 0 ||
+            arena_idx >= static_cast<int>(m_scene->m_arenas.size()))
         {
             return false;
         }
@@ -218,8 +217,7 @@ class SoccerEnv
     }
 
   private:
-    static constexpr int MAX_FRAMES =
-        1800; //  Matches C++ genetic algorithm duration
+    static constexpr int MAX_FRAMES = 1800;
 
     std::unique_ptr<HeadlessApplication> m_app;
     HeadlessTrainerScene *m_scene = nullptr;

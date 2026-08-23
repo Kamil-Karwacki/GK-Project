@@ -146,10 +146,17 @@ void DefaultScene::init()
     EnemyController &enemyController = enemy.AddComponent<EnemyController>();
     std::vector<uint32_t> layersSizes{43, 128, 128, 6};
     NeuralAgent &agent = enemy.AddComponent<NeuralAgent>(layersSizes);
-    // Load the Python PPO model natively (squashOutput = false)
-    agent.loadFromFile("ppo_brain.txt", false);
-    // To switch back to C++ model, comment out the line above and uncomment the
-    // agent.loadFromFile("best_brain.txt", true);
+    if (app.m_args.size() >= 2 && app.m_args[1] == "genetic")
+    {
+        std::cout << "Using genetic AI\n";
+        agent.loadFromFile("best_brain.txt", true);
+    }
+    else
+    {
+        std::cout << "Using PPO AI\n";
+        agent.loadFromFile("ppo_brain.txt", false);
+    }
+
     enemy.AddComponent<MeshRenderer>(enemyModel, defaultShader);
     enemy.AddComponent<Rigidbody>(10.0f, 0.1f, 0.5f, 0.99f, 0.99f);
     SphereCollider &enemyCol =
@@ -368,7 +375,6 @@ void DefaultScene::update(float deltaTime)
                 m_enemy->GetComponent<Footballer>()->canMove = true;
         }
     }
-
 }
 
 void DefaultScene::fixedUpdate(float deltaTime)
@@ -515,7 +521,8 @@ void DefaultScene::drawUI()
         std::string pauseText = "GAME PAUSED";
         float tw = ImGui::CalcTextSize(pauseText.c_str()).x;
         ImGui::SetCursorPosX((400.0f - tw) * 0.5f);
-        ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.0f, 1.0f), "%s", pauseText.c_str());
+        ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.0f, 1.0f), "%s",
+                           pauseText.c_str());
         ImGui::SetWindowFontScale(1.0f);
 
         ImGui::Dummy(ImVec2(0.0f, 25.0f));
@@ -525,8 +532,10 @@ void DefaultScene::drawUI()
 
         // Resume button
         ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.1f, 0.6f, 0.2f, 1.0f));
-        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.2f, 0.7f, 0.3f, 1.0f));
-        ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.08f, 0.5f, 0.15f, 1.0f));
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered,
+                              ImVec4(0.2f, 0.7f, 0.3f, 1.0f));
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive,
+                              ImVec4(0.08f, 0.5f, 0.15f, 1.0f));
         ImGui::SetCursorPosX((400.0f - buttonWidth) * 0.5f);
         if (ImGui::Button("RESUME", ImVec2(buttonWidth, buttonHeight)))
         {
@@ -535,16 +544,20 @@ void DefaultScene::drawUI()
             {
                 ma_sound_start(&m_matchMusic);
             }
-            glfwSetInputMode(app.m_window->getNativeWindow(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+            glfwSetInputMode(app.m_window->getNativeWindow(), GLFW_CURSOR,
+                             GLFW_CURSOR_DISABLED);
         }
         ImGui::PopStyleColor(3);
 
         ImGui::Dummy(ImVec2(0.0f, 15.0f));
 
         // Restart button
-        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.15f, 0.15f, 0.2f, 1.0f));
-        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.25f, 0.25f, 0.35f, 1.0f));
-        ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.1f, 0.1f, 0.15f, 1.0f));
+        ImGui::PushStyleColor(ImGuiCol_Button,
+                              ImVec4(0.15f, 0.15f, 0.2f, 1.0f));
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered,
+                              ImVec4(0.25f, 0.25f, 0.35f, 1.0f));
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive,
+                              ImVec4(0.1f, 0.1f, 0.15f, 1.0f));
         ImGui::SetCursorPosX((400.0f - buttonWidth) * 0.5f);
         if (ImGui::Button("RESTART MATCH", ImVec2(buttonWidth, buttonHeight)))
         {
@@ -558,8 +571,10 @@ void DefaultScene::drawUI()
 
         // Main Menu button
         ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.2f, 0.4f, 0.8f, 1.0f));
-        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.3f, 0.5f, 0.9f, 1.0f));
-        ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.1f, 0.3f, 0.7f, 1.0f));
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered,
+                              ImVec4(0.3f, 0.5f, 0.9f, 1.0f));
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive,
+                              ImVec4(0.1f, 0.3f, 0.7f, 1.0f));
         ImGui::SetCursorPosX((400.0f - buttonWidth) * 0.5f);
         if (ImGui::Button("MAIN MENU", ImVec2(buttonWidth, buttonHeight)))
         {

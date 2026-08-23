@@ -13,6 +13,7 @@ class Application
   public:
     Application();
     ~Application();
+    Application(int argc, char *argv[]);
 
     void run();
     void close();
@@ -35,6 +36,8 @@ class Application
     std::unique_ptr<BaseScene> m_activeScene;
 
     ma_engine m_soundEngine;
+
+    std::vector<std::string_view> m_args;
 
   private:
     std::unique_ptr<InputManager> m_inputManager;

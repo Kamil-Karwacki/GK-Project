@@ -47,7 +47,6 @@ class OpponentPoolCallback(BaseCallback):
 def main():
     print("Initializing Vectorized Environment...")
     env = SoccerGymWrapper()
-    # Wrap the environment so Stable Baselines3 logs episode rewards and lengths
     env = VecMonitor(env)
     print(f"Environment initialized with {env.num_envs} parallel arenas.")
 

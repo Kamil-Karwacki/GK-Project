@@ -32,11 +32,11 @@ void MatchArena::resetPositions()
     float az = posDist(gen);
     float bx = posDist(gen);
     float bz = posDist(gen);
-    float ballX = posDist(gen) * 1.5f; // Ball has slightly larger spawn radius
+    float ballX = posDist(gen) * 1.5f;
     float ballZ = posDist(gen) * 1.5f;
 
-    m_playerA->GetComponent<Transform>()->setPosition(m_arenaOffset +
-                                                      glm::vec3(ax, 2, 50 + az));
+    m_playerA->GetComponent<Transform>()->setPosition(
+        m_arenaOffset + glm::vec3(ax, 2, 50 + az));
     m_playerA->GetComponent<Transform>()->setRotation(glm::vec3(0.0f));
     m_playerA->GetComponent<Rigidbody>()->m_velocity = glm::vec3(0);
     m_playerA->GetComponent<Rigidbody>()->m_angularVelocity = glm::vec3(0);
@@ -46,8 +46,8 @@ void MatchArena::resetPositions()
         ecA->m_pitch = 0.0f;
     }
 
-    m_playerB->GetComponent<Transform>()->setPosition(m_arenaOffset +
-                                                      glm::vec3(bx, 2, -50 + bz));
+    m_playerB->GetComponent<Transform>()->setPosition(
+        m_arenaOffset + glm::vec3(bx, 2, -50 + bz));
     m_playerB->GetComponent<Transform>()->setRotation(
         glm::vec3(0.0f, glm::radians(180.0f), 0.0f));
     m_playerB->GetComponent<Rigidbody>()->m_velocity = glm::vec3(0);
@@ -60,11 +60,12 @@ void MatchArena::resetPositions()
 
     glm::vec3 ballStart = m_arenaOffset + glm::vec3(ballX, 5, ballZ);
     m_ball->GetComponent<Transform>()->setPosition(ballStart);
-    m_ball->GetComponent<Rigidbody>()->m_velocity = glm::vec3(velDist(gen), 0, velDist(gen));
+    m_ball->GetComponent<Rigidbody>()->m_velocity =
+        glm::vec3(velDist(gen), 0, velDist(gen));
 
     m_needsReset = false;
     m_framesSinceLastReset = 0;
-    
+
     m_prevBallToGateA = glm::distance(ballStart, m_gateAPos);
     m_prevBallToGateB = glm::distance(ballStart, m_gateBPos);
 
@@ -112,12 +113,12 @@ void MatchArena::updateFitness()
 
     float currDistToBallA = glm::distance(agentAPos, ballPos);
     float deltaDistToBallA = m_prevAgentAToBall - currDistToBallA;
-    m_fitnessA += deltaDistToBallA * 2.0f;
+    m_fitnessA += deltaDistToBallA * 0.5f;
     m_prevAgentAToBall = currDistToBallA;
 
     float currDistToBallB = glm::distance(agentBPos, ballPos);
     float deltaDistToBallB = m_prevAgentBToBall - currDistToBallB;
-    m_fitnessB += deltaDistToBallB * 2.0f;
+    m_fitnessB += deltaDistToBallB * 0.5f;
     m_prevAgentBToBall = currDistToBallB;
 
     float currBallToGateB = glm::distance(ballPos, m_gateBPos);

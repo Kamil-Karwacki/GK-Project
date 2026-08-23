@@ -4,12 +4,10 @@ from stable_baselines3 import PPO
 def export_matrix(file, matrix):
     rows, cols = matrix.shape
     file.write(f"{rows} {cols}\n")
-    # flatten() returns row-major by default
     data_str = " ".join([str(val) for val in matrix.flatten()])
     file.write(f"{data_str}\n")
 
 def export_model_instance(model, out_txt_path):
-    # Extract the networks from SB3 PPO Policy
     policy_net = model.policy.mlp_extractor.policy_net
     action_net = model.policy.action_net
 

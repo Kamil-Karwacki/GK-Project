@@ -10,6 +10,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/constants.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+
 void EnemyController::onStart()
 {
     Transform *transform = m_entity->GetComponent<Transform>();
@@ -237,8 +238,9 @@ void EnemyController::onUpdate(float deltaTime)
                 m_lastKick = outputs(3, 0) > 0.5f;
                 m_lastMoveX = std::max(-1.0, std::min(1.0, outputs(0, 0)));
                 m_lastMoveY = std::max(-1.0, std::min(1.0, outputs(1, 0)));
-                // Clip raw network output to [-1.0, 1.0] before multiplying by 2.0f
-                // to match stable-baselines3 Box(-1, 1) action_space clipping during training.
+                // Clip raw network output to [-1.0, 1.0] before multiplying
+                // by 2.0f to match stable-baselines3 Box(-1, 1) action_space
+                // clipping during training.
                 m_lastTurnYaw =
                     outputs.m_rows >= 6
                         ? std::max(-1.0, std::min(1.0, outputs(4, 0))) * 2.0f

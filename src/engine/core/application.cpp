@@ -87,6 +87,15 @@ Application::Application() : m_isRunning(true)
     }
 }
 
+Application::Application(int argc, char *argv[]) : Application()
+{
+    m_args.reserve(argc);
+    for (int i = 0; i < argc; ++i)
+    {
+        m_args.emplace_back(argv[i]);
+    }
+}
+
 Application::~Application()
 {
     ma_engine_uninit(&m_soundEngine);

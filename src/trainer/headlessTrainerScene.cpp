@@ -2,7 +2,6 @@
 #include "headlessTrainerScene.hpp"
 
 #include <cstdint>
-#include <memory>
 
 #include "glm/ext/matrix_transform.hpp"
 #include "glm/ext/vector_float2.hpp"
@@ -13,7 +12,6 @@
 #include "scripts/enemyController.hpp"
 #include "scripts/footballer.hpp"
 #include "scripts/footballerShootTrigger.hpp"
-#include "scripts/gateTrigger.hpp"
 #include "scripts/pitchGenerator.hpp"
 #include "scripts/playerGrounded.hpp"
 #include "world/components/collider.hpp"
